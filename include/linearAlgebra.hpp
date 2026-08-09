@@ -14,8 +14,8 @@ public:
     Matrix operator-(const Matrix& m2) const;
     Matrix operator*(const Matrix& m2) const;
     Matrix operator*(const double k) const;
-    Matrix operator=(const Matrix& m2) const;
-    Matrix operator()(size_t r, size_t c);
+    Matrix& operator=(const Matrix& m2);
+    double& operator()(size_t r, size_t c);
 
     Matrix transpose();
 
