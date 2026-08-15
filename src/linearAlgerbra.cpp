@@ -25,6 +25,14 @@ Matrix::~Matrix(){
     delete[] data;
 }
 
+Matrix Matrix::Identity(size_t n){
+    Matrix result(n, n);
+    for(size_t i = 0; i < n; i++){
+        result.data[i + i*n] = 1;
+    }
+    return result;
+}
+
 // Matrix operations
 Matrix Matrix::operator+(const Matrix&m2) const{
     if(cols != m2.cols || rows != m2.rows){
@@ -86,20 +94,30 @@ Matrix& Matrix::operator=(const Matrix& m2){
     cols = m2.cols;
     delete[] data;
     data = new double[rows * cols];
-    for(int i = 0; i < rows * cols; i++){
+    for(size_t i = 0; i < rows * cols; i++){
         data[i] = m2.data[i];
     }
     return *this;
 }
 
-double& Matrix::operator()(size_t r, size_t c){
+double& Matrix::operator()(size_t r, size_t c) const{
     if(r >= rows || c >= cols){
         throw std::range_error("index out of range");
     }
     return data[r * cols + c];
 }
 
-Matrix Matrix::transpose(){
+bool Matrix::operator==(const Matrix& m2) const{
+    if(rows != m2.rows || cols != m2.cols)
+        return false;
+    for(size_t i = 0; i < rows * cols; i++){
+        if(std::abs(data[i] - m2.data[i]) > epsilon)
+            return false;
+    }
+    return true;
+}
+
+Matrix Matrix::transpose() const{
     Matrix trans(cols, rows);
     for(size_t j = 0; j < rows; j++){
         for(size_t i = 0; i < cols; i++){
@@ -109,76 +127,118 @@ Matrix Matrix::transpose(){
     return trans;
 }
 
-size_t Matrix::getRows(){
+double Matrix::determinant() const{
+
+}
+
+luDecomposition Matrix::luDecompose(){
+    if(rows != cols){
+        throw std::range_error("matrix is not square");
+    }
+
+    luDecomposition result;
+    Matrix U(*this);
+    Matrix L = Matrix::Identity(rows);
+
+}
+
+size_t Matrix::getRows() const{
     return rows;
 }
 
-size_t Matrix::getCols(){
+size_t Matrix::getCols() const{
     return cols;
 }
 
+// elementary row operations
+void Matrix::swapRows(size_t r1, size_t r2){
+    for(size_t i = 0; i < cols; i++){
+        double tmp = data[r1 * cols + i];
+        data[r1 * cols + i] = data[r2 * cols + i];
+        data[r2 * cols + i] = tmp;
+    }
+}
+
+void Matrix::scaleRow(size_t r, double k){
+    for(size_t i = 0; i < cols; i++){
+        data[r*cols + i] *= k;
+    }
+}
+
+void Matrix::addScaledRow(size_t dst, size_t scr, double k){
+    for(size_t i = 0; i < cols; i++){
+        data[dst*cols + i] += k * data[scr * cols + i];
+    }
+}
+
+
 // showing matrix
-void Matrix::show(){
-    for(int j = 0; j < rows; j++){
-        for(int i = 0; i < cols; i++){
+void Matrix::show() const{
+    for(size_t j = 0; j < rows; j++){
+        for(size_t i = 0; i < cols; i++){
             std::cout << data[i + j * cols] << " ";
         }
         std::cout << '\n';
     }
 }
 
-void Matrix::head(){
+void Matrix::head() const{
     if(rows < 5){
         (*this).show();
         return;
     }
 
-    for(int j = 0; j < 5; j++){
-        for(int i = 0; i < cols; i++){
+    for(size_t j = 0; j < 5; j++){
+        for(size_t i = 0; i < cols; i++){
             std::cout << data[i + j * cols] << " ";
         }
         std::cout << '\n';
     }
 }
 
-void Matrix::head(size_t n){
+void Matrix::head(size_t n) const{
     if(rows < n){
         (*this).show();
         return;
     }
 
-    for(int j = 0; j < n; j++){
-        for(int i = 0; i < cols; i++){
+    for(size_t j = 0; j < n; j++){
+        for(size_t i = 0; i < cols; i++){
             std::cout << data[i + j * cols] << " ";
         }
         std::cout << '\n';
     }
 }
 
-void Matrix::tail(){
+void Matrix::tail() const{
     if(rows < 5){
         (*this).show();
         return;
     }
 
-    for(int j = rows - 5; j < rows; j++){
-        for(int i = 0; i < cols; i++){
+    for(size_t j = rows - 5; j < rows; j++){
+        for(size_t i = 0; i < cols; i++){
             std::cout << data[i + j * cols] << " ";
         }
         std::cout << '\n';
     }
 }
 
-void Matrix::tail(size_t n){
+void Matrix::tail(size_t n) const{
     if(rows < n){
         (*this).show();
         return;
     }
 
-    for(int j = rows - n; j < rows; j++){
-        for(int i = 0; i < cols; i++){
+    for(size_t j = rows - n; j < rows; j++){
+        for(size_t i = 0; i < cols; i++){
             std::cout << data[i + j * cols] << " ";
         }
         std::cout << '\n';
     }
+}
+
+// free functions
+Matrix operator*(double k, const Matrix& m){
+    return m * k;
 }
