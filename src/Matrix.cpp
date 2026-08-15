@@ -1,6 +1,6 @@
 #include <iostream>
 #include <algorithm>
-#include "linearAlgebra.hpp"
+#include "Matrix.hpp"
 
 
 // constructors and destructor
