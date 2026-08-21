@@ -1,5 +1,3 @@
-#include <iostream>
-#include <algorithm>
 #include "Matrix.hpp"
 
 
@@ -18,6 +16,22 @@ Matrix::Matrix(const Matrix& m2)
     
     for(size_t i = 0; i < rows * cols; i++){
         data[i] = m2.data[i];
+    }
+}
+
+Matrix::Matrix(size_t r, size_t c, std::initializer_list<double> list)
+    : rows(r), cols(c), data(new double[r*c])
+{   
+    size_t n = list.size();
+    if(n > r*c)
+        throw std::invalid_argument("Matrix can't hold init list");
+
+    size_t i = 0;
+    for(const auto& element : list){
+        data[i++] = element;
+    }
+    for(; i < r*c; i++){
+        data[i] = 0;
     }
 }
 
@@ -79,12 +93,28 @@ Matrix Matrix::operator*(const Matrix&m2) const{
     return result;
 }
 
-Matrix Matrix::operator*(const double k) const{
-    Matrix result(rows, cols);
-    for(size_t i = 0; i < rows * cols; i++){
-        result.data[i] = data[i] * k;
+Matrix& Matrix::operator+=(const Matrix& m2){
+    if(cols != m2.cols || rows != m2.rows){
+        throw std::range_error("dimensions are not compatible");
     }
-    return result;
+
+    for(int i = 0; i < rows * cols; i++){
+        data[i] += m2.data[i];
+    }
+
+    return *this;
+}
+
+Matrix& Matrix::operator-=(const Matrix& m2){
+    if(cols != m2.cols || rows != m2.rows){
+        throw std::range_error("dimensions are not compatible");
+    }
+
+    for(int i = 0; i < rows * cols; i++){
+        data[i] -= m2.data[i];
+    }
+
+    return *this;
 }
 
 Matrix& Matrix::operator=(const Matrix& m2){
@@ -100,7 +130,7 @@ Matrix& Matrix::operator=(const Matrix& m2){
     return *this;
 }
 
-double& Matrix::operator()(size_t r, size_t c) const{
+double Matrix::operator()(size_t r, size_t c) const{
     if(r >= rows || c >= cols){
         throw std::range_error("index out of range");
     }
@@ -128,20 +158,183 @@ Matrix Matrix::transpose() const{
 }
 
 double Matrix::determinant() const{
+    // det(A) = det(U) * (-1)^swaps
+    luDecomposition lu = (*this).luDecompose();
+    double result = ((lu.swaps % 2 == 0) ? 1 : -1);
+    for(size_t i = 0; i < rows; i++){
+        if(lu.U(i, i) < epsilon && lu.U(i, i) > -epsilon) return 0;
+        result *= lu.U(i, i);
+    }
 
+    return result;
 }
 
-luDecomposition Matrix::luDecompose(){
-    if(rows != cols){
+
+luDecomposition Matrix::luDecompose() const{
+    if(!isSquare()){
         throw std::range_error("matrix is not square");
     }
 
-    luDecomposition result;
     Matrix U(*this);
     Matrix L = Matrix::Identity(rows);
+    std::vector<size_t> P(rows);
+    for(size_t i = 0; i < rows; i++){
+        P[i] = i;
+    }
+    size_t swaps = 0;
 
+    // TODO: LU decomposition logic here
+
+    return luDecomposition{L, U, P, swaps};
 }
 
+
+// element-wise operations
+Matrix Matrix::hadamard(const Matrix& m2) const{
+    if(rows != m2.rows || cols != m2.cols)
+        throw std::range_error("dimension are not compatible");
+
+    Matrix result(rows, cols);
+    for(size_t i = 0; i < rows; i++){
+        for(size_t j = 0; j < cols; j++){
+            result.data[j + i * cols] = (*this)(i, j) * m2(i, j);
+        }
+    }
+
+    return result;
+}
+
+Matrix Matrix::apply(double (*func)(double)) const{
+    Matrix result(rows, cols);
+    for(size_t i = 0; i < rows; i++){
+        for(size_t j = 0; j < cols; j++){
+            result.data[j + i * cols] = func((*this)(i, j));
+        }
+    }
+
+    return result;
+}
+
+Matrix Matrix::operator+(const double k) const{
+    Matrix result(rows, cols);
+    for(size_t i = 0; i < rows * cols; i++){
+        result.data[i] = data[i] + k;
+    }
+    return result;
+}
+
+Matrix Matrix::operator-(const double k) const{
+    Matrix result(rows, cols);
+    for(size_t i = 0; i < rows * cols; i++){
+        result.data[i] = data[i] - k;
+    }
+    return result;
+}
+
+Matrix Matrix::operator*(const double k) const{
+    Matrix result(rows, cols);
+    for(size_t i = 0; i < rows * cols; i++){
+        result.data[i] = data[i] * k;
+    }
+    return result;
+}
+
+Matrix& Matrix::operator+=(const double k){
+    for(int i = 0; i < rows * cols; i++){
+        data[i] += k;
+    }
+
+    return *this;
+}
+
+Matrix& Matrix::operator-=(const double k){
+    for(int i = 0; i < rows * cols; i++){
+        data[i] -= k;
+    }
+
+    return *this;
+}
+
+Matrix& Matrix::operator*=(const double k){
+    for(int i = 0; i < rows * cols; i++){
+        data[i] *= k;
+    }
+
+    return *this;
+}
+
+// reductions and aggregations
+double Matrix::sum() const{
+    double result = 0;
+    for(size_t i = 0; i < rows*cols; i++){
+        result += data[i];
+    }
+    return result;
+}
+
+double Matrix::mean() const{
+    return sum()/(rows*cols);
+}
+
+Matrix Matrix::sum(int axis) const{
+    if(axis == 0){
+        Matrix result(rows, 1);
+        for(size_t i = 0; i < rows; i++){
+            double sum = 0;
+            for(size_t j = 0; j < cols; j++){
+                sum += (*this)(i, j);
+            }
+            result.data[i] = sum;
+        }
+
+        return result;
+    }
+    else if(axis == 1){
+        Matrix result(1, cols);
+        for(size_t i = 0; i < cols; i++){
+            double sum = 0;
+            for(size_t j = 0; j < rows; j++){
+                sum += (*this)(j, i);
+            }
+            result.data[i] = sum;
+        }
+
+        return result;
+    }
+    else
+        throw std::invalid_argument("axis must be 0 or 1");
+}
+
+Matrix Matrix::mean(int axis) const{
+    if(axis == 0){
+        Matrix result(rows, 1);
+        for(size_t i = 0; i < rows; i++){
+            double sum = 0;
+            for(size_t j = 0; j < cols; j++){
+                sum += (*this)(i, j);
+            }
+            result.data[i] = sum / cols;
+        }
+
+        return result;
+    }
+    else if(axis == 1){
+        Matrix result(1, cols);
+        for(size_t i = 0; i < cols; i++){
+            double sum = 0;
+            for(size_t j = 0; j < rows; j++){
+                sum += (*this)(j, i);
+            }
+            result.data[i] = sum/ rows;
+        }
+
+        return result;
+    }
+    else
+        throw std::invalid_argument("axis must be 0 or 1");
+}
+
+// get dimensions
 size_t Matrix::getRows() const{
     return rows;
 }
@@ -171,6 +364,24 @@ void Matrix::addScaledRow(size_t dst, size_t scr, double k){
     }
 }
 
+// checks
+bool Matrix::isSquare() const{
+    return(rows == cols);
+}
+bool Matrix::isSymmetric() const{
+    if(!isSquare()) return false;
+
+    for(size_t i = 0; i < rows; i++){
+        for(size_t j = 0; j < cols; j++){
+            if(std::abs((*this)(i, j) - (*this)(j, i)) < epsilon)
+                return false;
+        }
+    }
+    return true;
+}
+bool Matrix::isSingular() const{
+    return (std::abs((determinant())) < epsilon);
+}
 
 // showing matrix
 void Matrix::show() const{
@@ -239,6 +450,14 @@ void Matrix::tail(size_t n) const{
 }
 
 // free functions
-Matrix operator*(double k, const Matrix& m){
+Matrix operator*(const double k, const Matrix& m){
     return m * k;
+}
+
+Matrix operator+(const double k, const Matrix& m){
+    return m + k;
+}
+
+Matrix operator-(const double k, const Matrix& m){
+    return m - k;
 }
