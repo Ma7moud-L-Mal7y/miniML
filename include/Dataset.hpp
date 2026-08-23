@@ -5,6 +5,7 @@
 #include <fstream>
 #include "Matrix.hpp"
 #include <vector>
+#include <iomanip>
 
 class Dataset{
     public:

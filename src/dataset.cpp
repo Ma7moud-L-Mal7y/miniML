@@ -80,20 +80,20 @@ void Dataset::show(size_t start, size_t end)const{
     size_t featureNums=featureMatrix.getCols();
     size_t labelNums= labelMatrix.getCols();
     for (size_t j = 0; j < featureNums; j++) {
-        std::cout << featureNames[j] << ' ';
+        std::cout << std::setw(10) << featureNames[j];
     }
     std::cout << ' ';
     for (size_t j = 0; j < labelNums; j++) {
-        std::cout << labelNames[j] << ' ';
+        std::cout << std::setw(10) << labelNames[j]; 
     }
     std::cout << "\n";
     for(size_t i=start;i<end;i++){
         for(size_t j=0;j<featureNums;j++){
-            std:: cout<<featureMatrix(i,j)<< ' ';
+            std::cout << std::setw(10) << featureMatrix(i,j);
         }
         std ::cout<< ' ';
         for(size_t j=0;j<labelNums;j++){
-            std:: cout<<labelMatrix(i,j)<<' ';
+            std::cout << std::setw(10) << labelMatrix(i,j);
         }
         std::cout<< "\n";
     }
