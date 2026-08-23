@@ -12,7 +12,7 @@ Dataset::Dataset(const std::string& filepath,size_t labelNums)
 {
     std :: ifstream file(filepath);
     if(!file.is_open()){
-        throw std:: runtime_error("could not open file"+filepath);
+        throw std:: runtime_error("could not open file: "+filepath);
     }
     std ::vector<std::string> allNames;
     std:: string line;
@@ -24,10 +24,10 @@ Dataset::Dataset(const std::string& filepath,size_t labelNums)
     }
     size_t allCols=allNames.size();
     size_t featureNums=allCols-labelNums;
-    for(int i=0;i<featureNums;i++){
+    for(size_t i=0;i<featureNums;i++){
         featureNames.push_back(allNames[i]);
     }
-    for(int i=featureNums;i<allCols;i++){
+    for(size_t i=featureNums;i<allCols;i++){
         labelNames.push_back(allNames[i]);
     }
     size_t rowNums=0;
@@ -43,7 +43,7 @@ Dataset::Dataset(const std::string& filepath,size_t labelNums)
     while(std::getline(file,line)){
         std::stringstream linestream(line);
         std:: string piece;
-        size_t c;
+        size_t c=0;
         while(std::getline(linestream,piece,',')){
             double value=std::stod(piece);
             if(c<featureNums){
@@ -56,5 +56,81 @@ Dataset::Dataset(const std::string& filepath,size_t labelNums)
         }
         r++;
     }
+}
 
+//get dimensions
+
+size_t Dataset::getSamples()const{
+    return featureMatrix.getRows();
+}
+size_t Dataset::getFeatures()const{
+    return featureMatrix.getCols();
+}
+size_t Dataset::getLabels()const{
+    return labelMatrix.getCols();
+}
+
+//showing dataset
+
+void Dataset::show()const{
+    size_t sampleNums=featureMatrix.getRows();
+    size_t featureNums=featureMatrix.getCols();
+    size_t labelNums= labelMatrix.getCols();
+    for (size_t j = 0; j < featureNums; j++) {
+        std::cout << featureNames[j] << ' ';
+    }
+    std::cout << ' ';
+    for (size_t j = 0; j < labelNums; j++) {
+        std::cout << labelNames[j] << ' ';
+    }
+    std::cout << "\n";
+
+    for(size_t i=0;i<sampleNums;i++){
+        for(size_t j=0;j<featureNums;j++){
+            std:: cout<<featureMatrix(i,j)<< ' ';
+        }
+        std ::cout<< ' ';
+        for(size_t j=0;j<labelNums;j++){
+            std:: cout<<labelMatrix(i,j)<<' ';
+        }
+        std::cout<< "\n";
+    }
+}
+
+void Dataset:: showFeatures()const{
+    size_t featureNums=featureMatrix.getCols();
+    for (size_t j = 0; j < featureNums; j++) {
+        std::cout << featureNames[j] << ' ';
+    }
+    std::cout<< '\n';
+    featureMatrix.show();
+}
+void Dataset::showLabels()const{
+    size_t labelNums= labelMatrix.getCols();
+    for (size_t j = 0; j < labelNums; j++) {
+        std::cout << labelNames[j] << ' ';
+    }
+    std::cout<< '\n';
+    labelMatrix.show();
+}
+void Dataset::showFeatureNames()const{
+    size_t featureNums=featureMatrix.getCols();
+    for (size_t j = 0; j < featureNums; j++) {
+        std::cout << featureNames[j] << ' ';
+    }
+}
+void Dataset::showLabelNames()const{
+    size_t labelNums= labelMatrix.getCols();
+    for (size_t j = 0; j < labelNums; j++) {
+        std::cout << labelNames[j] << ' ';
+    }
+}
+
+//get matrices
+
+Matrix Dataset::getX()const{
+    return featureMatrix;
+}
+Matrix Dataset::getY()const{
+    return labelMatrix;
 }
