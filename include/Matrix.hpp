@@ -7,9 +7,10 @@
 #include <cmath>
 #include <stdexcept>
 #include <vector>
+#include <cfloat>
 
 
-#define epsilon 0.00001
+#define epsilon 0.0000001
 
 // helper structs
 struct luDecomposition;
@@ -33,11 +34,15 @@ public:
     Matrix& operator-=(const Matrix& m2);
     Matrix& operator=(const Matrix& m2);
     double operator()(size_t r, size_t c) const;
+    double& operator()(size_t r, size_t c);
     bool operator==(const Matrix& m2) const;
 
+    luDecomposition luDecompose() const;
     Matrix transpose() const;
     double determinant() const;
-    luDecomposition luDecompose() const;
+    size_t rank() const;
+    Matrix solve(const Matrix& b) const;
+    Matrix inverse() const;
 
     // element-wise operations
     Matrix hadamard(const Matrix& m2) const;

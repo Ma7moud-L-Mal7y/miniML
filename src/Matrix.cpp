@@ -137,6 +137,13 @@ double Matrix::operator()(size_t r, size_t c) const{
     return data[r * cols + c];
 }
 
+double& Matrix::operator()(size_t r, size_t c){
+    if(r >= rows || c >= cols){
+        throw std::range_error("index out of range");
+    }
+    return data[r * cols + c];
+}
+
 bool Matrix::operator==(const Matrix& m2) const{
     if(rows != m2.rows || cols != m2.cols)
         return false;
@@ -146,29 +153,6 @@ bool Matrix::operator==(const Matrix& m2) const{
     }
     return true;
 }
-
-Matrix Matrix::transpose() const{
-    Matrix trans(cols, rows);
-    for(size_t j = 0; j < rows; j++){
-        for(size_t i = 0; i < cols; i++){
-            trans.data[j + i * rows] = data[i + j * cols];
-        }
-    }
-    return trans;
-}
-
-double Matrix::determinant() const{
-    // det(A) = det(U) * (-1)^swaps
-    luDecomposition lu = (*this).luDecompose();
-    double result = ((lu.swaps % 2 == 0) ? 1 : -1);
-    for(size_t i = 0; i < rows; i++){
-        if(lu.U(i, i) < epsilon && lu.U(i, i) > -epsilon) return 0;
-        result *= lu.U(i, i);
-    }
-
-    return result;
-}
-
 
 luDecomposition Matrix::luDecompose() const{
     if(!isSquare()){
@@ -183,11 +167,80 @@ luDecomposition Matrix::luDecompose() const{
     }
     size_t swaps = 0;
 
-    // TODO: LU decomposition logic here
+    for(size_t col = 0; col < cols; col++){
+        double max_element = 0.0;
+        size_t max_idx = 0;
+        for(size_t row = col; row < rows; row++){
+            if(std::abs(U(row, col)) > max_element){
+                max_element = std::abs(U(row, col));
+                max_idx = row;
+            }
+        }
+        std::swap(P[max_idx], P[col]);
+        U.swapRows(col, max_idx);
+        swaps += (col != max_idx);
+
+        if(max_idx != col){
+            for(size_t k = 0; k < col; k++){
+                double tmp = L(col, k);
+                L(col, k) = L(max_idx, k);
+                L(max_idx, k) = tmp;
+            }
+        }
+
+
+        for(size_t row = col + 1; row < rows; row++){
+            double m = U(row, col) / U(col, col);
+            L(row, col) = m;
+            U.addScaledRow(row, col, -m);
+        }
+    }
 
     return luDecomposition{L, U, P, swaps};
 }
 
+Matrix Matrix::transpose() const{
+    Matrix trans(cols, rows);
+    for(size_t j = 0; j < rows; j++){
+        for(size_t i = 0; i < cols; i++){
+            trans.data[j + i * rows] = data[i + j * cols];
+        }
+    }
+    return trans;
+}
+
+double Matrix::determinant() const{
+    luDecomposition lu = luDecompose();
+    double result = ((lu.swaps % 2 == 0) ? 1 : -1);
+    for(size_t i = 0; i < rows; i++){
+        if(lu.U(i, i) < epsilon && lu.U(i, i) > -epsilon) return 0;
+        result *= lu.U(i, i);
+    }
+
+    return result;
+}
+
+size_t Matrix::rank() const{
+    size_t r = 0;
+    luDecomposition lu = luDecompose();
+    for(size_t i = 0; i < rows; i++){
+        r += (std::abs(lu.U(i, i)) > epsilon);
+    }
+
+    return r;
+}
+
+Matrix Matrix::solve(const Matrix& b) const{
+    Matrix x(rows, 1);
+
+    // solve logic
+
+    return x;
+}
+
+Matrix Matrix::inverse() const{
+    // inverse logic
+}
 
 // element-wise operations
 Matrix Matrix::hadamard(const Matrix& m2) const{
@@ -373,7 +426,7 @@ bool Matrix::isSymmetric() const{
 
     for(size_t i = 0; i < rows; i++){
         for(size_t j = 0; j < cols; j++){
-            if(std::abs((*this)(i, j) - (*this)(j, i)) < epsilon)
+            if(std::abs((*this)(i, j) - (*this)(j, i)) > epsilon)
                 return false;
         }
     }
