@@ -242,6 +242,38 @@ Matrix Matrix::inverse() const{
     // inverse logic
 }
 
+Matrix Matrix::row_slice(size_t r1, size_t r2) const{
+    if(r1 > r2)
+        std::swap(r1, r2);
+
+    if(r2 >= rows)
+        throw std::range_error("out of bound rows");
+
+    Matrix result(r2 - r1 + 1, cols);
+    for(size_t i = r1; i <= r2; i++){
+        for(size_t j = 0; j < cols; j++){
+            result(i - r1, j) = (*this)(i, j);
+        }
+    }
+    return result;
+}
+
+Matrix Matrix::col_slice(size_t c1, size_t c2) const{
+    if(c1 > c2)
+        std::swap(c1, c2);
+
+    if(c2 >= cols)
+        throw std::range_error("out of bound cols");
+
+    Matrix result(rows, c2 - c1 + 1);
+    for(size_t j = c1; j <= c2; j++){
+        for(size_t i = 0; i < rows; i++){
+            result(i, j - c1) = (*this)(i, j);
+        }
+    }
+    return result;
+}
+
 // element-wise operations
 Matrix Matrix::hadamard(const Matrix& m2) const{
     if(rows != m2.rows || cols != m2.cols)
@@ -438,6 +470,7 @@ bool Matrix::isSingular() const{
 
 // showing matrix
 void Matrix::show() const{
+    std::cout << std::fixed << std::setprecision(4);
     for(size_t j = 0; j < rows; j++){
         for(size_t i = 0; i < cols; i++){
             std::cout << data[i + j * cols] << " ";
@@ -447,6 +480,7 @@ void Matrix::show() const{
 }
 
 void Matrix::head() const{
+    std::cout << std::fixed << std::setprecision(4);
     if(rows < 5){
         (*this).show();
         return;
@@ -461,6 +495,7 @@ void Matrix::head() const{
 }
 
 void Matrix::head(size_t n) const{
+    std::cout << std::fixed << std::setprecision(4);
     if(rows < n){
         (*this).show();
         return;
@@ -475,6 +510,7 @@ void Matrix::head(size_t n) const{
 }
 
 void Matrix::tail() const{
+    std::cout << std::fixed << std::setprecision(4);
     if(rows < 5){
         (*this).show();
         return;
@@ -489,6 +525,7 @@ void Matrix::tail() const{
 }
 
 void Matrix::tail(size_t n) const{
+    std::cout << std::fixed << std::setprecision(4);
     if(rows < n){
         (*this).show();
         return;
