@@ -72,29 +72,36 @@ size_t Dataset::getLabels()const{
 
 //showing dataset
 
-void Dataset::show()const{
+void Dataset::show(size_t start, size_t end)const{
     size_t sampleNums=featureMatrix.getRows();
+    if(start>sampleNums||start>end||end>sampleNums||start==end){
+        throw std::invalid_argument("invalid starting or ending position");
+    }
     size_t featureNums=featureMatrix.getCols();
     size_t labelNums= labelMatrix.getCols();
     for (size_t j = 0; j < featureNums; j++) {
-        std::cout << featureNames[j] << ' ';
+        std::cout << std::setw(10) << featureNames[j];
     }
     std::cout << ' ';
     for (size_t j = 0; j < labelNums; j++) {
-        std::cout << labelNames[j] << ' ';
+        std::cout << std::setw(10) << labelNames[j]; 
     }
     std::cout << "\n";
-
-    for(size_t i=0;i<sampleNums;i++){
+    for(size_t i=start;i<end;i++){
         for(size_t j=0;j<featureNums;j++){
-            std:: cout<<featureMatrix(i,j)<< ' ';
+            std::cout << std::setw(10) << featureMatrix(i,j);
         }
         std ::cout<< ' ';
         for(size_t j=0;j<labelNums;j++){
-            std:: cout<<labelMatrix(i,j)<<' ';
+            std::cout << std::setw(10) << labelMatrix(i,j);
         }
         std::cout<< "\n";
     }
+}
+
+void Dataset::show()const{
+    size_t sampleNums=featureMatrix.getRows();  
+    (*this).show(0,sampleNums);
 }
 
 void Dataset:: showFeatures()const{
@@ -125,6 +132,41 @@ void Dataset::showLabelNames()const{
         std::cout << labelNames[j] << ' ';
     }
 }
+void Dataset::head()const{
+    size_t sampleNums=featureMatrix.getRows();  
+    if(sampleNums<5){
+        (*this).show(0,sampleNums);
+        return;
+    }
+    (*this).show(0,5);
+}
+void Dataset::head(size_t n)const{
+    size_t sampleNums=featureMatrix.getRows();  
+    if(sampleNums<n){
+        (*this).show(0,sampleNums);
+        return;
+    }
+    (*this).show(0,n);
+}
+
+void Dataset::tail()const{
+    size_t sampleNums=featureMatrix.getRows();  
+    if(sampleNums<5){
+        (*this).show(0,sampleNums);
+        return;
+    }
+    (*this).show(sampleNums-5,sampleNums);
+}
+void Dataset::tail(size_t n)const{
+    size_t sampleNums=featureMatrix.getRows();  
+    if(sampleNums<n){
+        (*this).show(0,sampleNums);
+        return;
+    }
+    (*this).show(sampleNums-n,sampleNums);
+}
+
+
 
 //get matrices
 

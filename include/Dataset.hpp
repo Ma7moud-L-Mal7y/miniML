@@ -3,8 +3,9 @@
 #include <string>
 #include <sstream>
 #include <fstream>
-#include "matrix.hpp"
+#include "Matrix.hpp"
 #include <vector>
+#include <iomanip>
 
 class Dataset{
     public:
@@ -18,6 +19,7 @@ class Dataset{
     size_t getLabels() const;
 
     // show dataset 
+    void show(size_t start, size_t end) const;
     void show() const;
     void showFeatures() const;
     void showLabels()const;
