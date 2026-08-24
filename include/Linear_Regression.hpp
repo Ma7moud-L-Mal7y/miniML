@@ -18,7 +18,7 @@ public:
 
     // showing
     void graph();
-    void show_beta();
+    void showBeta();
 
 private:
     // matrices
@@ -34,3 +34,6 @@ namespace metrics{
     double computeRMSE(const Matrix& y, const Matrix& y_hat);
     double computeR2(const Matrix& y, const Matrix& y_hat);
 }
+
+// helper functions
+Matrix addOnesCol(const Matrix& A);

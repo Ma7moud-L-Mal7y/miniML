@@ -45,8 +45,10 @@ public:
     Matrix solve(const Matrix& b) const;
     Matrix inverse() const;
 
-    Matrix row_slice(size_t r1, size_t r2) const;
-    Matrix col_slice(size_t c1, size_t c2) const;
+    Matrix rowSlice(size_t r1, size_t r2) const;
+    Matrix colSlice(size_t c1, size_t c2) const;
+    Matrix appendRows(const Matrix& m2) const;
+    Matrix appendCols(const Matrix& m2) const;
 
     // element-wise operations
     Matrix hadamard(const Matrix& m2) const;

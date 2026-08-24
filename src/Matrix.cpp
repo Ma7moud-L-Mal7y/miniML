@@ -231,6 +231,9 @@ size_t Matrix::rank() const{
 }
 
 Matrix Matrix::solve(const Matrix& b) const{
+    if(!isSquare())
+        throw std::range_error("Matrix is not square");
+
     Matrix x(rows, 1);
 
     // solve logic
@@ -242,7 +245,7 @@ Matrix Matrix::inverse() const{
     // inverse logic
 }
 
-Matrix Matrix::row_slice(size_t r1, size_t r2) const{
+Matrix Matrix::rowSlice(size_t r1, size_t r2) const{
     if(r1 > r2)
         std::swap(r1, r2);
 
@@ -258,7 +261,7 @@ Matrix Matrix::row_slice(size_t r1, size_t r2) const{
     return result;
 }
 
-Matrix Matrix::col_slice(size_t c1, size_t c2) const{
+Matrix Matrix::colSlice(size_t c1, size_t c2) const{
     if(c1 > c2)
         std::swap(c1, c2);
 
@@ -271,6 +274,40 @@ Matrix Matrix::col_slice(size_t c1, size_t c2) const{
             result(i, j - c1) = (*this)(i, j);
         }
     }
+    return result;
+}
+
+Matrix Matrix::appendRows(const Matrix& m2) const{
+    if(cols != m2.cols)
+        throw std::range_error("can't append matrices with different column lengths");
+
+    Matrix result(rows + m2.rows, cols);
+    for(size_t j = 0; j < cols; j++){
+        for(size_t i = 0; i < rows; i++){
+            result(i, j) = (*this)(i,j);
+        }
+        for(size_t i = 0; i < m2.rows; i++){
+            result(i+rows, j) = m2(i, j);
+        }
+    }
+
+    return result;
+}
+
+Matrix Matrix::appendCols(const Matrix& m2) const{
+    if(rows != m2.rows)
+        throw std::range_error("can't append matrices with different row lengths");
+
+    Matrix result(rows, cols + m2.cols);
+    for(size_t i = 0; i < rows; i++){
+        for(size_t j = 0; j < cols; j++){
+            result(i, j) = (*this)(i,j);
+        }
+        for(size_t j = 0; j < m2.cols; j++){
+            result(i, j + cols) = m2(i, j);
+        }
+    }
+
     return result;
 }
 
