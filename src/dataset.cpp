@@ -60,13 +60,13 @@ Dataset::Dataset(const std::string& filepath,size_t labelNums)
 
 //get dimensions
 
-size_t Dataset::getSamples()const{
+size_t Dataset::getSampleNums()const{
     return featureMatrix.getRows();
 }
-size_t Dataset::getFeatures()const{
+size_t Dataset::getFeatureNums()const{
     return featureMatrix.getCols();
 }
-size_t Dataset::getLabels()const{
+size_t Dataset::getLabelNums()const{
     return labelMatrix.getCols();
 }
 
@@ -175,4 +175,28 @@ Matrix Dataset::getX()const{
 }
 Matrix Dataset::getY()const{
     return labelMatrix;
+}
+std::vector<std::string> Dataset:: getFeatureNames()const{
+    return featureNames;
+}
+std::vector<std::string> Dataset:: getLabelNames()const{
+    return labelNames;
+}
+
+// data set slicing
+trainTest Dataset:: trainTestSplit(size_t startTrain, size_t endTrain,size_t startTest, size_t endTest)const{
+    if((startTest<endTrain&&startTest>startTrain)||(endTest<endTrain&&endTest>startTrain)){
+        throw std:: range_error("train sample and test sample overlap");
+    }
+    Matrix trainX = featureMatrix.row_slice(startTrain,endTrain);
+    Matrix trainY = labelMatrix.row_slice(startTrain,endTrain);
+    Matrix testX = featureMatrix.row_slice(startTest,endTest);
+    Matrix testY = labelMatrix.row_slice(startTest,endTest);
+    Dataset trainset(trainX,trainY);
+    Dataset testset(testX,testY);
+    return trainTest(trainset,testset);
+}
+trainTest Dataset:: trainTestSplit(size_t splitPoint)const{
+    size_t rows= this->getSampleNums();
+    return this->trainTestSplit(0, splitPoint,splitPoint+1,rows);
 }

@@ -6,6 +6,7 @@
 #include "Matrix.hpp"
 #include <vector>
 #include <iomanip>
+struct trainTest;
 
 class Dataset{
     public:
@@ -14,9 +15,9 @@ class Dataset{
     Dataset(const Matrix& x,const Matrix& y);
 
     //get dimensions
-    size_t getSamples() const;
-    size_t getFeatures() const;
-    size_t getLabels() const;
+    size_t getSampleNums() const;
+    size_t getFeatureNums() const;
+    size_t getLabelNums() const;
 
     // show dataset 
     void show(size_t start, size_t end) const;
@@ -30,13 +31,22 @@ class Dataset{
     void tail() const;
     void tail(size_t n) const;
 
-    //get matrices
+    //get matrices or vectors
     Matrix getX()const;
     Matrix getY()const;
+    std::vector<std::string> getFeatureNames()const;
+    std::vector<std::string> getLabelNames()const;
     
-
+    //dataset operations
+    trainTest trainTestSplit(size_t startTrain, size_t endTrain,size_t startTest, size_t endTest)const;
+    trainTest trainTestSplit(size_t splitPoint)const;
     private:
         Matrix featureMatrix, labelMatrix;
         std ::vector<std::string> featureNames;
         std ::vector<std::string> labelNames;
+};
+
+struct trainTest{
+    Dataset trainSample;
+    Dataset testSample;
 };
