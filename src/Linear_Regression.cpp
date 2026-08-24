@@ -50,7 +50,7 @@ void LinearRegression::graph(){
 
 }
 
-void LinearRegression::show_beta(){
+void LinearRegression::showBeta(){
     if(!beta.has_value())
         throw std::runtime_error("beta is not populated yet");
 
@@ -74,4 +74,20 @@ double metrics::computeRMSE(const Matrix& y, const Matrix& y_hat){
 
 double metrics::computeR2(const Matrix& y, const Matrix& y_hat){
 
+}
+
+// helper functions
+Matrix addOnesCol(const Matrix& A){
+    size_t r = A.getRows(), c = A.getCols();
+    Matrix result(r, c + 1);
+    for(size_t i = 0; i < r; i++){
+        for(size_t j = 0; j < c + 1; j++){
+            if(j == c)
+                result(i, j) = 1;
+            else
+                result(i, j) = A(i, j);
+        }
+    }
+
+    return result;
 }
