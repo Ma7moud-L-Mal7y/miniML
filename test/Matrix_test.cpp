@@ -1,4 +1,5 @@
 #include "Matrix.hpp"
+#include "Dataset.hpp"
 
 
 double quad(double x){
@@ -12,6 +13,10 @@ int main(){
     double x = A.determinant();
     std::cout << x << '\n';
     
-
+    Dataset s("C:/Users/boody/Downloads/small_dataset.csv");
+    s.show();
+    std::cout<<'\n';
+    s.shuffle();
+    s.show();
     return 0;
 }

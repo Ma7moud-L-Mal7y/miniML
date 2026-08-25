@@ -168,7 +168,7 @@ void Dataset::tail(size_t n)const{
 
 
 
-//get matrices
+//get matrices or vectors
 
 Matrix Dataset::getX()const{
     return featureMatrix;
@@ -183,20 +183,32 @@ std::vector<std::string> Dataset:: getLabelNames()const{
     return labelNames;
 }
 
-// data set slicing
+// data set operations
 trainTest Dataset:: trainTestSplit(size_t startTrain, size_t endTrain,size_t startTest, size_t endTest)const{
-    if((startTest<endTrain&&startTest>startTrain)||(endTest<endTrain&&endTest>startTrain)){
-        throw std:: range_error("train sample and test sample overlap");
+    if (startTrain <= endTest && startTest <= endTrain) {
+        throw std::range_error("train sample and test sample overlap");
     }
-    Matrix trainX = featureMatrix.row_slice(startTrain,endTrain);
-    Matrix trainY = labelMatrix.row_slice(startTrain,endTrain);
-    Matrix testX = featureMatrix.row_slice(startTest,endTest);
-    Matrix testY = labelMatrix.row_slice(startTest,endTest);
+    Matrix trainX = featureMatrix.rowSlice(startTrain,endTrain);
+    Matrix trainY = labelMatrix.rowSlice(startTrain,endTrain);
+    Matrix testX = featureMatrix.rowSlice(startTest,endTest);
+    Matrix testY = labelMatrix.rowSlice(startTest,endTest);
     Dataset trainset(trainX,trainY);
     Dataset testset(testX,testY);
-    return trainTest(trainset,testset);
+    return trainTest{trainset,testset};
 }
 trainTest Dataset:: trainTestSplit(size_t splitPoint)const{
     size_t rows= this->getSampleNums();
-    return this->trainTestSplit(0, splitPoint,splitPoint+1,rows);
+    return this->trainTestSplit(0, splitPoint,splitPoint+1,rows-1);
+}
+void Dataset::shuffle(){
+    size_t rows = this->getSampleNums();
+    if (rows <= 1) return;
+    std::random_device rd;
+    std::mt19937 engine(rd());
+    for (size_t i = 0; i < rows - 1; i++) {
+        std::uniform_int_distribution<size_t> dist(i, rows - 1);
+        size_t randomNumber = dist(engine);
+        featureMatrix.swapRows(i, randomNumber);
+        labelMatrix.swapRows(i, randomNumber);
+    }
 }

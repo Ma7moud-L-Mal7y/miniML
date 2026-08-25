@@ -11,7 +11,7 @@
 #include <iomanip>
 
 
-#define epsilon 0.0000001
+constexpr double epsilon = 0.0000001;
 
 // helper structs
 struct luDecomposition;

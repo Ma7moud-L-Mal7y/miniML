@@ -6,6 +6,7 @@
 #include "Matrix.hpp"
 #include <vector>
 #include <iomanip>
+#include <random>
 struct trainTest;
 
 class Dataset{
@@ -40,6 +41,8 @@ class Dataset{
     //dataset operations
     trainTest trainTestSplit(size_t startTrain, size_t endTrain,size_t startTest, size_t endTest)const;
     trainTest trainTestSplit(size_t splitPoint)const;
+    void shuffle();
+
     private:
         Matrix featureMatrix, labelMatrix;
         std ::vector<std::string> featureNames;
