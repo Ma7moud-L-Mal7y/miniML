@@ -61,6 +61,15 @@ Matrix LogisticRegression::predictClass(const Matrix& X) const{
     }
     return classify;
 }
+//show
+void LogisticRegression::showBeta(){
+    if(!beta.has_value())
+        throw std::runtime_error("beta is not populated yet");
+    beta.value().show();
+}
+void LogisticRegression::graph(){
+    
+}
 
 double sigmoidFunction(double z){
     return 1.0/(1.0+std::exp(-z));
