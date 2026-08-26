@@ -219,7 +219,7 @@ void Dataset::normalize(){
     Matrix stds=featureMatrix.std(0);
     for(int i=0;i<featureMatrix.getRows();i++){
         for(int j=0;j<featureMatrix.getCols();j++){
-            featureMatrix(i,j)=featureMatrix(i,j)-means(0,j)/stds(0,j);
+            featureMatrix(i,j)=(featureMatrix(i,j)-means(0,j))/stds(0,j);
         }
     }
 }

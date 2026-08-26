@@ -9,15 +9,16 @@ int main() {
 
     std::cout << "=== Loaded Dataset ===\n";
     data.show();
-    data.shuffle();
     data.normalize();
+    std::cout<<"\n\n";
+    data.show();
 
     // 2. Get raw X and y
     Matrix X = data.getX();
     Matrix Y = data.getY();
 
     // 3. Train logistic regression
-    LogisticRegression model(X, Y, 2000, 0.01);
+    LogisticRegression model(X, Y, 100000, 0.01);
     Matrix learnedBeta = model.fit();
 
     std::cout << "\n=== Learned Beta ===\n";
