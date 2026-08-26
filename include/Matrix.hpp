@@ -66,6 +66,8 @@ public:
     Matrix sum(int axis) const;
     double mean() const;
     Matrix mean(int axis) const;
+    double std()const;
+    Matrix std(int axis)const;
 
     // get dimensions
     size_t getRows() const;

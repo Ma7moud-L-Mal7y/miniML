@@ -42,6 +42,8 @@ class Dataset{
     trainTest trainTestSplit(size_t startTrain, size_t endTrain,size_t startTest, size_t endTest)const;
     trainTest trainTestSplit(size_t splitPoint)const;
     void shuffle();
+    void normalize();
+    
 
     private:
         Matrix featureMatrix, labelMatrix;

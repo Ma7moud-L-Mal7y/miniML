@@ -19,17 +19,26 @@ LogisticRegression::LogisticRegression(Matrix x,Matrix y,size_t maxIterations,do
 
 // training
 
-Matrix LogisticRegression::fit(const Matrix& X, const Matrix& Y){
-    this->x=X;
-    this->y=Y;
-    size_t colNums= x.value().getCols();
-    size_t sampleNums =x.value().getRows();
-    beta=Matrix(colNums,1);
-    for(size_t i=0; i<maxIterations;i++){
-        Matrix predictions= sigmoid(x.value()*beta.value());
-        Matrix error = predictions-y.value();
-        Matrix gradient =(x.value().transpose()*error)*(1.0/sampleNums);
-        beta=beta.value()-learningRate*gradient;
+Matrix LogisticRegression::fit(const Matrix& X, const Matrix& Y) {
+    this->x = X;
+    this->y = Y;
+    size_t colNums = x.value().getCols();
+    size_t sampleNums = x.value().getRows();
+    beta = Matrix(colNums, 1);
+    
+    const double tolerance = 1e-6;
+    
+    for(size_t i = 0; i < maxIterations; i++) {
+        Matrix predictions = sigmoid(x.value() * beta.value());
+        Matrix error = predictions - y.value();
+        Matrix gradient = (x.value().transpose() * error) * (1.0 / sampleNums);
+        double gradNorm = gradient.hadamard(gradient).sum();
+        if (gradNorm < tolerance * tolerance) {
+            std::cout << "Converged at iteration " << i << "\n";
+            break;
+        }
+        
+        beta = beta.value() - gradient * learningRate;
     }
     return beta.value();
 }

@@ -185,7 +185,7 @@ std::vector<std::string> Dataset:: getLabelNames()const{
 
 // data set operations
 trainTest Dataset:: trainTestSplit(size_t startTrain, size_t endTrain,size_t startTest, size_t endTest)const{
-    if (startTrain <= endTest && startTest <= endTrain) {
+    if (startTrain < endTest && startTest < endTrain) {
         throw std::range_error("train sample and test sample overlap");
     }
     Matrix trainX = featureMatrix.rowSlice(startTrain,endTrain);
@@ -198,7 +198,9 @@ trainTest Dataset:: trainTestSplit(size_t startTrain, size_t endTrain,size_t sta
 }
 trainTest Dataset:: trainTestSplit(size_t splitPoint)const{
     size_t rows= this->getSampleNums();
-    return this->trainTestSplit(0, splitPoint,splitPoint+1,rows-1);
+    if (splitPoint == 0 || splitPoint >= rows)
+        throw std::invalid_argument("splitPoint must be between 1 and rows-1");
+    return this->trainTestSplit(0, splitPoint,splitPoint,rows);
 }
 void Dataset::shuffle(){
     size_t rows = this->getSampleNums();
@@ -210,5 +212,14 @@ void Dataset::shuffle(){
         size_t randomNumber = dist(engine);
         featureMatrix.swapRows(i, randomNumber);
         labelMatrix.swapRows(i, randomNumber);
+    }
+}
+void Dataset::normalize(){
+    Matrix means=featureMatrix.mean(0);
+    Matrix stds=featureMatrix.std(0);
+    for(int i=0;i<featureMatrix.getRows();i++){
+        for(int j=0;j<featureMatrix.getCols();j++){
+            featureMatrix(i,j)=featureMatrix(i,j)-means(0,j)/stds(0,j);
+        }
     }
 }
