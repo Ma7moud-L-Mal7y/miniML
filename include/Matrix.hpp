@@ -43,6 +43,7 @@ public:
     double determinant() const;
     size_t rank() const;
     Matrix solve(const Matrix& b) const;
+    Matrix solve(const Matrix& b, luDecomposition lu) const;
     Matrix inverse() const;
 
     Matrix rowSlice(size_t r1, size_t r2) const;
@@ -92,12 +93,6 @@ private:
     double *data;
 };
 
-// free functions
-Matrix operator*(const double k, Matrix& m);
-Matrix operator+(const double k, Matrix& m);
-Matrix operator-(const double k, Matrix& m);
-
-
 // struct definition
 struct luDecomposition{
     Matrix L;
@@ -105,3 +100,10 @@ struct luDecomposition{
     std::vector<size_t> P;
     size_t swaps;
 };
+
+// free functions
+Matrix operator*(double k, const Matrix& m);
+Matrix operator+(double k, const Matrix& m);
+Matrix operator-(double k, const Matrix& m);
+
+void showLU(const luDecomposition& lu);
