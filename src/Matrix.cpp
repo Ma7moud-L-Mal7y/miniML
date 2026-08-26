@@ -1,6 +1,5 @@
 #include "Matrix.hpp"
 
-
 // constructors and destructor
 Matrix::Matrix(size_t r, size_t c)
     : rows(r), cols(c), data(new double[r*c])
@@ -79,14 +78,14 @@ Matrix Matrix::operator*(const Matrix&m2) const{
         throw std::range_error("dimensions are not compatible");
     }
 
+    // C_i,j = sum{ A_i,k * B_k,j }
     Matrix result(rows, m2.cols);
-    for(size_t j = 0; j < rows; j++){
-        for(size_t i = 0; i < m2.cols; i++){
-            double SOP = 0;
-            for(size_t k = 0; k < cols; k++){
-                SOP += data[k + cols * j] * m2.data[i + m2.cols * k];
+    for(size_t i = 0; i < rows; i++){
+        for(size_t k = 0; k < cols; k++){
+            double a = (*this)(i, k);
+            for(size_t j = 0; j < m2.cols; j++){
+                result(i, j) += a * m2(k, j);
             }
-            result.data[j * m2.cols + i] = SOP;
         }
     }
 
@@ -98,7 +97,7 @@ Matrix& Matrix::operator+=(const Matrix& m2){
         throw std::range_error("dimensions are not compatible");
     }
 
-    for(int i = 0; i < rows * cols; i++){
+    for(size_t i = 0; i < rows * cols; i++){
         data[i] += m2.data[i];
     }
 
@@ -110,7 +109,7 @@ Matrix& Matrix::operator-=(const Matrix& m2){
         throw std::range_error("dimensions are not compatible");
     }
 
-    for(int i = 0; i < rows * cols; i++){
+    for(size_t i = 0; i < rows * cols; i++){
         data[i] -= m2.data[i];
     }
 
@@ -119,14 +118,17 @@ Matrix& Matrix::operator-=(const Matrix& m2){
 
 Matrix& Matrix::operator=(const Matrix& m2){
     if(this == &m2) return *this;
+    
+    double *newData = new double[m2.rows * m2.cols];
+    for(size_t i = 0; i < rows * cols; i++){
+        newData[i] = m2.data[i];
+    }
 
+    delete[] data;
+    data = newData;
     rows = m2.rows;
     cols = m2.cols;
-    delete[] data;
-    data = new double[rows * cols];
-    for(size_t i = 0; i < rows * cols; i++){
-        data[i] = m2.data[i];
-    }
+
     return *this;
 }
 
@@ -169,7 +171,7 @@ luDecomposition Matrix::luDecompose() const{
 
     for(size_t col = 0; col < cols; col++){
         double max_element = 0.0;
-        size_t max_idx = 0;
+        size_t max_idx = col;
         for(size_t row = col; row < rows; row++){
             if(std::abs(U(row, col)) > max_element){
                 max_element = std::abs(U(row, col));
@@ -231,18 +233,68 @@ size_t Matrix::rank() const{
 }
 
 Matrix Matrix::solve(const Matrix& b) const{
+    luDecomposition lu = luDecompose();
+    return solve(b, lu);
+}
+
+Matrix Matrix::solve(const Matrix& b, luDecomposition lu) const{
     if(!isSquare())
         throw std::range_error("Matrix is not square");
 
-    Matrix x(rows, 1);
+    if(b.rows != rows || b.cols != 1)
+        throw std::range_error("b must be a column vector matching A's dimensions");
 
-    // solve logic
+    size_t n = rows;
+
+    // Ly = Pb <1>
+    // Ux = y  <2>
+    Matrix  y(n, 1);
+    Matrix  x(n, 1);
+    Matrix Pb(n, 1);
+
+    for(size_t i = 0; i < n; i++){
+        Pb(i, 0) = b(lu.P[i], 0);
+    }
+    
+    y(0,0) = Pb(0,0);
+    for(size_t i = 1; i < n; i++){
+        double sum = 0;
+        for(size_t j = 0; j < i; j++){
+            sum += y(j, 0) * lu.L(i, j);
+        }
+        y(i, 0) = Pb(i, 0) - sum;
+    }
+    
+    x(n-1, 0) = y(n-1, 0) / lu.U(n-1, n-1);
+    for(size_t i = n-1; i-- > 0;){
+        double sum = 0;
+        for(size_t j = n-1; j != i; j--){
+            sum += lu.U(i, j) * x(j, 0);
+        }
+
+        x(i, 0) = (y(i, 0) - sum) / lu.U(i,i);
+    }
 
     return x;
 }
 
 Matrix Matrix::inverse() const{
-    // inverse logic
+    if(!isSquare())
+        throw std::range_error("Matrix is not square");
+
+    luDecomposition lu = luDecompose();
+    Matrix result(rows, cols);
+    for(size_t j = 0; j < cols; j++){
+        Matrix e(rows, 1);
+        e(j, 0) = 1;
+        Matrix col = solve(e, lu);
+        for(size_t i = 0; i < rows; i++){
+            result(i, j) = col(i, 0);
+        }
+    }
+
+    return result;
+
 }
 
 Matrix Matrix::rowSlice(size_t r1, size_t r2) const{
@@ -362,7 +414,7 @@ Matrix Matrix::operator*(const double k) const{
 }
 
 Matrix& Matrix::operator+=(const double k){
-    for(int i = 0; i < rows * cols; i++){
+    for(size_t i = 0; i < rows * cols; i++){
         data[i] += k;
     }
 
@@ -370,7 +422,7 @@ Matrix& Matrix::operator+=(const double k){
 }
 
 Matrix& Matrix::operator-=(const double k){
-    for(int i = 0; i < rows * cols; i++){
+    for(size_t i = 0; i < rows * cols; i++){
         data[i] -= k;
     }
 
@@ -378,7 +430,7 @@ Matrix& Matrix::operator-=(const double k){
 }
 
 Matrix& Matrix::operator*=(const double k){
-    for(int i = 0; i < rows * cols; i++){
+    for(size_t i = 0; i < rows * cols; i++){
         data[i] *= k;
     }
 
@@ -399,7 +451,7 @@ double Matrix::mean() const{
 }
 
 Matrix Matrix::sum(int axis) const{
-    if(axis == 0){
+    if(axis == 1){
         Matrix result(rows, 1);
         for(size_t i = 0; i < rows; i++){
             double sum = 0;
@@ -411,7 +463,7 @@ Matrix Matrix::sum(int axis) const{
 
         return result;
     }
-    else if(axis == 1){
+    else if(axis == 0){
         Matrix result(1, cols);
         for(size_t i = 0; i < cols; i++){
             double sum = 0;
@@ -428,32 +480,7 @@ Matrix Matrix::sum(int axis) const{
 }
 
 Matrix Matrix::mean(int axis) const{
-    if(axis == 0){
-        Matrix result(rows, 1);
-        for(size_t i = 0; i < rows; i++){
-            double sum = 0;
-            for(size_t j = 0; j < cols; j++){
-                sum += (*this)(i, j);
-            }
-            result.data[i] = sum / cols;
-        }
-
-        return result;
-    }
-    else if(axis == 1){
-        Matrix result(1, cols);
-        for(size_t i = 0; i < cols; i++){
-            double sum = 0;
-            for(size_t j = 0; j < rows; j++){
-                sum += (*this)(j, i);
-            }
-            result.data[i] = sum/ rows;
-        }
-
-        return result;
-    }
-    else
-        throw std::invalid_argument("axis must be 0 or 1");
+    return sum(axis) * (1.0/((axis) ? cols : rows));
 }
 
 // get dimensions
@@ -494,7 +521,7 @@ bool Matrix::isSymmetric() const{
     if(!isSquare()) return false;
 
     for(size_t i = 0; i < rows; i++){
-        for(size_t j = 0; j < cols; j++){
+        for(size_t j = 0; j < i; j++){
             if(std::abs((*this)(i, j) - (*this)(j, i)) > epsilon)
                 return false;
         }
@@ -502,7 +529,7 @@ bool Matrix::isSymmetric() const{
     return true;
 }
 bool Matrix::isSingular() const{
-    return (std::abs((determinant())) < epsilon);
+    return (rank() < rows);
 }
 
 // showing matrix
@@ -577,14 +604,30 @@ void Matrix::tail(size_t n) const{
 }
 
 // free functions
-Matrix operator*(const double k, const Matrix& m){
+Matrix operator*(double k, const Matrix& m){
     return m * k;
 }
 
-Matrix operator+(const double k, const Matrix& m){
+Matrix operator+(double k, const Matrix& m){
     return m + k;
 }
 
-Matrix operator-(const double k, const Matrix& m){
-    return m - k;
+Matrix operator-(double k, const Matrix& m){
+    return (m*-1) + k;
+}
+
+void showLU(const luDecomposition& lu){
+    std::cout << std::fixed << std::setprecision(4);
+    size_t rows = lu.L.getRows(), cols = lu.L.getCols();
+    for(size_t i = 0; i < rows; i++){
+        std::cout << "| ";
+        for(size_t j = 0; j < cols; j++){
+            std::cout << lu.L(i,j) << " ";
+        }
+        std::cout << "| ";
+        for(size_t j = 0; j < cols; j++){
+            std::cout << lu.U(i,j) << " ";
+        }
+        std::cout << "|\n";
+    }
 }
