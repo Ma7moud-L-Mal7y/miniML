@@ -120,7 +120,7 @@ Matrix& Matrix::operator=(const Matrix& m2){
     if(this == &m2) return *this;
     
     double *newData = new double[m2.rows * m2.cols];
-    for(size_t i = 0; i < rows * cols; i++){
+    for(size_t i = 0; i < m2.rows*m2.cols; i++){
         newData[i] = m2.data[i];
     }
 
@@ -301,11 +301,11 @@ Matrix Matrix::rowSlice(size_t r1, size_t r2) const{
     if(r1 > r2)
         std::swap(r1, r2);
 
-    if(r2 >= rows)
+    if(r2 > rows)
         throw std::range_error("out of bound rows");
 
-    Matrix result(r2 - r1 + 1, cols);
-    for(size_t i = r1; i <= r2; i++){
+    Matrix result(r2 - r1, cols);
+    for(size_t i = r1; i < r2; i++){
         for(size_t j = 0; j < cols; j++){
             result(i - r1, j) = (*this)(i, j);
         }
@@ -317,11 +317,11 @@ Matrix Matrix::colSlice(size_t c1, size_t c2) const{
     if(c1 > c2)
         std::swap(c1, c2);
 
-    if(c2 >= cols)
+    if(c2 > cols)
         throw std::range_error("out of bound cols");
 
-    Matrix result(rows, c2 - c1 + 1);
-    for(size_t j = c1; j <= c2; j++){
+    Matrix result(rows, c2 - c1 );
+    for(size_t j = c1; j <c2; j++){
         for(size_t i = 0; i < rows; i++){
             result(i, j - c1) = (*this)(i, j);
         }
@@ -481,6 +481,49 @@ Matrix Matrix::sum(int axis) const{
 
 Matrix Matrix::mean(int axis) const{
     return sum(axis) * (1.0/((axis) ? cols : rows));
+}
+double Matrix::std()const{
+    double mean=this->mean();
+    double variance=0;
+    for(size_t i=0;i<rows*cols;i++){
+        double diff = data[i] - mean;
+        variance += diff * diff;
+    }
+    variance/=(rows*cols);
+    return std::sqrt(variance);
+}
+Matrix Matrix::std(int axis)const{
+    if(axis==0){
+        Matrix result(1,cols);
+        Matrix means=this->mean(0);
+        for(size_t i=0;i<cols;i++){
+            double colVar=0;
+            for(size_t j=0;j<rows;j++){
+                double diff=(*this)(j,i)-means(0,i);
+                colVar+=diff*diff;
+            }
+            colVar/=rows;
+            result(0,i)=std::sqrt(colVar);
+        }
+        return result;
+    }
+    else if(axis==1){
+        Matrix result(rows,1);
+        Matrix means=this->mean(1);
+        for(size_t i=0;i<rows;i++){
+            double rowVar=0;
+            for(size_t j=0;j<cols;j++){
+                double diff=(*this)(i,j)-means(i,0);
+                rowVar+=diff*diff;
+            }
+            rowVar/=cols;
+            result(i,0)=std::sqrt(rowVar);
+        }
+        return result;
+    }
+    else {
+    throw std::invalid_argument("axis must be 0 or 1");
+    }   
 }
 
 // get dimensions

@@ -11,7 +11,7 @@
 #include <iomanip>
 
 
-#define epsilon 0.0000001
+constexpr double epsilon = 0.0000001;
 
 // helper structs
 struct luDecomposition;
@@ -66,6 +66,8 @@ public:
     Matrix sum(int axis) const;
     double mean() const;
     Matrix mean(int axis) const;
+    double std()const;
+    Matrix std(int axis)const;
 
     // get dimensions
     size_t getRows() const;
