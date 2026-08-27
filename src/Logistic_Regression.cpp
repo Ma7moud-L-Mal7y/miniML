@@ -20,6 +20,8 @@ LogisticRegression::LogisticRegression(Matrix x,Matrix y,size_t maxIterations,do
 // training
 
 Matrix LogisticRegression::fit(const Matrix& X, const Matrix& Y) {
+    if (Y.getCols() != 1)
+        throw std::invalid_argument("LogisticRegression expects a single-column label matrix");
     this->x = X;
     this->y = Y;
     size_t colNums = x.value().getCols();
@@ -80,7 +82,7 @@ void LogisticRegression::graph(){
     
 }
 
-double sigmoidFunction(double z){
+static double sigmoidFunction(double z){
     return 1.0/(1.0+std::exp(-z));
 }
 Matrix sigmoid(const Matrix &z){

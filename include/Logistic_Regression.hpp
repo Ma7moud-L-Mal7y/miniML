@@ -32,4 +32,3 @@ namespace classification_metrics {
     double computeLogLoss(const Matrix& y, const Matrix& y_hat);
 }
 Matrix sigmoid(const Matrix &z);
-double sigmoidFunction(double z);
