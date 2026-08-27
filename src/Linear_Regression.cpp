@@ -58,6 +58,17 @@ void LinearRegression::showBeta(){
 }
 
 // evaluate
+double metrics::computeSSE(const Matrix& y, const Matrix& y_hat){
+    Matrix e(y - y_hat);
+    return (e).hadamard(e).sum();
+}
+
+double metrics::computeSST(const Matrix& y){
+    double y_mean = y.mean();
+    Matrix e(y - y_mean);
+    return e.hadamard(e).sum();
+}
+
 double metrics::computeMSE(const Matrix& y, const Matrix& y_hat){
     Matrix e(y - y_hat);
     return (e).hadamard(e).mean();
@@ -65,7 +76,7 @@ double metrics::computeMSE(const Matrix& y, const Matrix& y_hat){
 
 double metrics::computeMAE(const Matrix& y, const Matrix& y_hat){
     Matrix e(y - y_hat);
-    return (e).apply(fabs).mean();
+    return (e).apply(std::fabs).mean();
 }
 
 double metrics::computeRMSE(const Matrix& y, const Matrix& y_hat){
@@ -73,7 +84,28 @@ double metrics::computeRMSE(const Matrix& y, const Matrix& y_hat){
 }
 
 double metrics::computeR2(const Matrix& y, const Matrix& y_hat){
+    double SSE = computeSSE(y, y_hat), SST = computeSST(y);
+    if(SST < epsilon)
+        return 1.0;
 
+    return 1 - (SSE/SST);
+}
+
+double metrics::computeAdjustedR2(const Matrix& y, const Matrix& y_hat, size_t features){
+    size_t n = y.getRows(), k = features;
+    double r2 = metrics::computeR2(y, y_hat);
+
+    return 1 - (1-r2)*((double)(n-1)/(n-k-1));
+}
+
+double metrics::computeMaxError(const Matrix& y, const Matrix& y_hat){
+    Matrix e(y - y_hat);
+
+    double maxError = 0.0;
+    for(size_t i = 0; i < e.getRows(); i++){
+        maxError = std::max(maxError, std::fabs(e(i, 0)));
+    }
+    return maxError;
 }
 
 // helper functions
