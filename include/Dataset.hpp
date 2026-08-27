@@ -46,6 +46,7 @@ class Dataset{
     
 
     private:
+        bool isNumericString(const std::string& s) const;
         Matrix featureMatrix, labelMatrix;
         std ::vector<std::string> featureNames;
         std ::vector<std::string> labelNames;
