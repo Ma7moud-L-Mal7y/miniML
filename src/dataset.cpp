@@ -7,57 +7,105 @@ Dataset::Dataset(const Matrix& x,const Matrix& y)
 {
 
 }
-Dataset::Dataset(const std::string& filepath,size_t labelNums)
-    : featureMatrix(0,0), labelMatrix(0,0)
-{
-    std :: ifstream file(filepath);
-    if(!file.is_open()){
-        throw std:: runtime_error("could not open file: "+filepath);
-    }
-    std ::vector<std::string> allNames;
-    std:: string line;
-    std::getline(file,line);
-    std::stringstream headerstream(line);
-    std::string name;
-    while(std::getline(headerstream,name,',')){
-        allNames.push_back(name);
-    }
-    size_t allCols=allNames.size();
-    size_t featureNums=allCols-labelNums;
-    for(size_t i=0;i<featureNums;i++){
-        featureNames.push_back(allNames[i]);
-    }
-    for(size_t i=featureNums;i<allCols;i++){
-        labelNames.push_back(allNames[i]);
-    }
-    size_t rowNums=0;
-    while(std::getline(file,line)){
-        rowNums++;
-    }
-    featureMatrix=Matrix(rowNums,featureNums);
-    labelMatrix=Matrix(rowNums,labelNums);
-    file.close();
-    file.open(filepath);
-    std ::getline(file,line);
-    size_t r=0;
-    while(std::getline(file,line)){
-        std::stringstream linestream(line);
-        std:: string piece;
-        size_t c=0;
-        while(std::getline(linestream,piece,',')){
-            double value=std::stod(piece);
-            if(c<featureNums){
-                featureMatrix(r,c)=value;
-            }
-            else{
-                labelMatrix(r,c-featureNums)=value;
-            }
-            c++;
-        }
-        r++;
+bool Dataset::isNumericString(const std::string& s) const {
+    if (s.empty()) return false;
+    try {
+        size_t pos;
+        std::stod(s, &pos);
+        return pos == s.size();
+    } 
+    catch (...) {
+        return false;
     }
 }
 
+Dataset::Dataset(const std::string& filepath, size_t labelNums)
+    : featureMatrix(0,0), labelMatrix(0,0)
+{
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        throw std::runtime_error("could not open file: " + filepath);
+    }
+    std::vector<std::string> allNames;
+    std::string line;
+    std::getline(file, line);
+    std::stringstream headerstream(line);
+    std::string name;
+    while (std::getline(headerstream, name, ',')) {
+        allNames.push_back(name);
+    }
+    size_t allCols = allNames.size();
+    size_t featureColsOriginal = allCols - labelNums;
+    std::vector<std::vector<std::string>> allRows;
+    while (std::getline(file, line)) {
+        std::stringstream linestream(line);
+        std::string piece;
+        std::vector<std::string> row;
+        while (std::getline(linestream, piece, ',')) {
+            row.push_back(piece);
+        }
+        allRows.push_back(row);
+    }
+    size_t rowNums = allRows.size();
+    std::vector<bool> isNumericCol(featureColsOriginal, true);
+    for (size_t c = 0; c < featureColsOriginal; c++) {
+        for (size_t r = 0; r < rowNums; r++) {
+            if (!isNumericString(allRows[r][c])) {
+                isNumericCol[c] = false;
+                break;
+            }
+        }
+    }
+    std::vector<std::vector<std::string>> categories(featureColsOriginal);
+    for (size_t c = 0; c < featureColsOriginal; c++) {
+        if (isNumericCol[c]) continue;
+        for (size_t r = 0; r < rowNums; r++) {
+            const std::string& val = allRows[r][c];
+            bool seen = false;
+            for (const auto& existing : categories[c]) {
+                if (existing == val) { seen = true; break; }
+            }
+            if (!seen) categories[c].push_back(val);
+        }
+    }
+    std::vector<size_t> startIndex(featureColsOriginal);
+    size_t expandedFeatureCount = 0;
+    for (size_t c = 0; c < featureColsOriginal; c++) {
+        startIndex[c] = expandedFeatureCount;
+        if (isNumericCol[c]) {
+            featureNames.push_back(allNames[c]);
+            expandedFeatureCount++;
+        } else {
+            for (const auto& category : categories[c]) {
+                featureNames.push_back(allNames[c] + "_" + category);
+            }
+            expandedFeatureCount += categories[c].size();
+        }
+    }
+    for (size_t c = featureColsOriginal; c < allCols; c++) {
+        labelNames.push_back(allNames[c]);
+    }
+    featureMatrix = Matrix(rowNums, expandedFeatureCount);
+    labelMatrix = Matrix(rowNums, labelNums);
+    for (size_t r = 0; r < rowNums; r++) {
+        for (size_t c = 0; c < featureColsOriginal; c++) {
+            if (isNumericCol[c]) {
+                featureMatrix(r, startIndex[c]) = std::stod(allRows[r][c]);
+            } else {
+                const std::string& val = allRows[r][c];
+                for (size_t k = 0; k < categories[c].size(); k++) {
+                    if (categories[c][k] == val) {
+                        featureMatrix(r, startIndex[c] + k) = 1.0;
+                        break;
+                    }
+                }
+            }
+        }
+        for (size_t c = featureColsOriginal; c < allCols; c++) {
+            labelMatrix(r, c - featureColsOriginal) = std::stod(allRows[r][c]);
+        }
+    }
+}
 //get dimensions
 
 size_t Dataset::getSampleNums()const{
@@ -80,20 +128,20 @@ void Dataset::show(size_t start, size_t end)const{
     size_t featureNums=featureMatrix.getCols();
     size_t labelNums= labelMatrix.getCols();
     for (size_t j = 0; j < featureNums; j++) {
-        std::cout << std::setw(10) << featureNames[j];
+        std::cout << std::setw(18) << featureNames[j];
     }
     std::cout << ' ';
     for (size_t j = 0; j < labelNums; j++) {
-        std::cout << std::setw(10) << labelNames[j]; 
+        std::cout << std::setw(18) << labelNames[j]; 
     }
     std::cout << "\n";
     for(size_t i=start;i<end;i++){
         for(size_t j=0;j<featureNums;j++){
-            std::cout << std::setw(10) << featureMatrix(i,j);
+            std::cout << std::setw(18) << featureMatrix(i,j);
         }
         std ::cout<< ' ';
         for(size_t j=0;j<labelNums;j++){
-            std::cout << std::setw(10) << labelMatrix(i,j);
+            std::cout << std::setw(18) << labelMatrix(i,j);
         }
         std::cout<< "\n";
     }
@@ -217,9 +265,11 @@ void Dataset::shuffle(){
 void Dataset::normalize(){
     Matrix means=featureMatrix.mean(0);
     Matrix stds=featureMatrix.std(0);
-    for(int i=0;i<featureMatrix.getRows();i++){
-        for(int j=0;j<featureMatrix.getCols();j++){
-            featureMatrix(i,j)=(featureMatrix(i,j)-means(0,j))/stds(0,j);
+    for(size_t i=0;i<featureMatrix.getRows();i++){
+        for(size_t j=0;j<featureMatrix.getCols();j++){
+            if(stds(0,j) > epsilon){
+                featureMatrix(i,j) = (featureMatrix(i,j) - means(0,j)) / stds(0,j);
+            }
         }
     }
 }

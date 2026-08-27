@@ -12,6 +12,7 @@ struct trainTest;
 class Dataset{
     public:
     // constructors
+    bool isNumericString(const std::string& s) const;
     Dataset(const std::string& filepath, size_t labelNums=1);
     Dataset(const Matrix& x,const Matrix& y);
 
