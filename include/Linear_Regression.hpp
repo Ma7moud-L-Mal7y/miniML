@@ -29,10 +29,14 @@ private:
 
 // evaluate
 namespace metrics{
+    double computeSSE(const Matrix& y, const Matrix& y_hat);
+    double computeSST(const Matrix& y, const Matrix& y_hat);
     double computeMSE(const Matrix& y, const Matrix& y_hat);
     double computeMAE(const Matrix& y, const Matrix& y_hat);
     double computeRMSE(const Matrix& y, const Matrix& y_hat);
     double computeR2(const Matrix& y, const Matrix& y_hat);
+    double computeAdjustedR2(const Matrix& y, const Matrix& y_hat);
+    double computeMaxError(const Matrix& y, const Matrix& y_hat);
 }
 
 // helper functions
