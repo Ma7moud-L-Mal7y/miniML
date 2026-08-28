@@ -27,7 +27,7 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 # 3. Discover all test source files in test/ and create test executables
-file(GLOB TEST_SOURCES "test/*.cpp")
+file(GLOB TEST_SOURCES CONFIGURE_DEPENDS "test/*.cpp")
 
 foreach(TEST_SRC ${TEST_SOURCES})
     # Extract filename without directory or extension (e.g., test/Matrix_test.cpp -> Matrix_test)
