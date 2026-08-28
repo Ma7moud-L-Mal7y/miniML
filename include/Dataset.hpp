@@ -48,6 +48,7 @@ public:
     Matrix normalize(const Matrix& x)const;
     void selectFeatures(const std::vector<std::string>& featureNames);
     void selectFeatures(std::initializer_list<std::string> featureNames);
+    void resetFeatures();
 
 private:
     std::vector<Column> columns;

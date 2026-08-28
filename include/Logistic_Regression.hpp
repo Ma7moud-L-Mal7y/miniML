@@ -1,7 +1,7 @@
 #pragma once
 #include "Matrix.hpp"
 #include <optional>
-
+struct ConfusionMatrix ;
 class LogisticRegression{
 public:
     //constructors
@@ -27,8 +27,19 @@ private:
     size_t maxIterations;
     double learningRate;
 };
+
+//evaluate
 namespace classification_metrics {
-    double computeAccuracy(const Matrix& y, const Matrix& y_hat);
+    ConfusionMatrix confusionMatrix(const Matrix& y, const Matrix& y_hat);
+    double computeAccuracy(const ConfusionMatrix& conmatrix);
+    double computePrecision(const ConfusionMatrix& conmatrix);
+    double computeRecall(const ConfusionMatrix& conmatrix);
+    double computeF1Score(const ConfusionMatrix& conmatrix);
     double computeLogLoss(const Matrix& y, const Matrix& y_hat);
 }
+//helper functions
 Matrix sigmoid(const Matrix &z);
+
+struct ConfusionMatrix {
+    double tp, fp, tn, fn;
+};

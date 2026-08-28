@@ -253,7 +253,16 @@ void Dataset::selectFeatures(const std::vector<std::string>& featureNames) {
 void Dataset::selectFeatures(std::initializer_list<std::string> featureNames) {
     selectFeatures(std::vector<std::string>(featureNames));
 }
-
+void Dataset::resetFeatures() {
+    selectedFeatureNames.clear();
+    size_t featureCount = columns.size() - labelCount;
+    for (size_t c = 0; c < featureCount; ++c)
+        if (columns[c].isNumeric)
+            selectedFeatureNames.push_back(columns[c].name);
+    hasNormStats = false;
+    normMeans.clear();
+    normStds.clear();
+}
 trainTest Dataset::trainTestSplit(size_t startTrain, size_t endTrain, size_t startTest, size_t endTest) const {
     size_t rows = getSampleNums();
     if (endTrain > rows || endTest > rows)
@@ -322,7 +331,7 @@ Matrix Dataset::normalize(const Matrix& x)const{
     for(size_t c=0;c<cols;c++){
         double mean=normMeans[c];
         double stddev=normStds[c];
-        for(size_t r=0;r<rows;c++){
+        for(size_t r=0;r<rows;r++){
             result(r, c) = (stddev < 1e-8) ? 0.0 : (result(r, c) - mean) / stddev;
         }
     }
