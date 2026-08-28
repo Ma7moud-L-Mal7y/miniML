@@ -3,7 +3,9 @@
 LogisticRegression::LogisticRegression()
     : beta(std::nullopt),
     x(std::nullopt),
-    y(std::nullopt)
+    y(std::nullopt),
+    learningRate(0.01),
+    maxIterations(1000)
 {
     
 }
