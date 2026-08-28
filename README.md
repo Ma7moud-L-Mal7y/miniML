@@ -121,3 +121,4 @@ Created and architected by **Mahmoud Mohamed**, including the project design, mo
 Development is a collaborative effort, with **Abdelrahman Ahmed** contributing to implementation across several modules.
 
 ## License
+MIT
