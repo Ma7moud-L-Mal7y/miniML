@@ -8,16 +8,9 @@
 #include <random>
 #include "Matrix.hpp"
 
-struct Column {
-    std::string name;
-    bool isNumeric;
-    std::vector<double> numericValues;
-    std::vector<std::string> textValues;
-};
-struct trainTest {
-    Dataset trainSample;
-    Dataset testSample;
-};
+struct Column;
+struct trainTest;
+
 class Dataset {
 public:
     //constructor
@@ -60,3 +53,14 @@ private:
     void swapRows(size_t r1, size_t r2);
 };
 
+struct Column {
+    std::string name;
+    bool isNumeric;
+    std::vector<double> numericValues;
+    std::vector<std::string> textValues;
+};
+
+struct trainTest {
+    Dataset trainSample;
+    Dataset testSample;
+};

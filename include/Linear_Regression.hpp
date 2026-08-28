@@ -35,7 +35,7 @@ namespace metrics{
     double computeMAE(const Matrix& y, const Matrix& y_hat);
     double computeRMSE(const Matrix& y, const Matrix& y_hat);
     double computeR2(const Matrix& y, const Matrix& y_hat);
-    double computeAdjustedR2(const Matrix& y, const Matrix& y_hat);
+    double computeAdjustedR2(const Matrix& y, const Matrix& y_hat, size_t features);
     double computeMaxError(const Matrix& y, const Matrix& y_hat);
 }
 

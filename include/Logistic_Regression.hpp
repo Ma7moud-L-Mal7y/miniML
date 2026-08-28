@@ -1,5 +1,5 @@
 #pragma once
-#include "matrix.hpp"
+#include "Matrix.hpp"
 #include <optional>
 
 class LogisticRegression{
