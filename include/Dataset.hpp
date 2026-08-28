@@ -3,56 +3,60 @@
 #include <string>
 #include <sstream>
 #include <fstream>
-#include "Matrix.hpp"
 #include <vector>
 #include <iomanip>
 #include <random>
-struct trainTest;
+#include "Matrix.hpp"
 
-class Dataset{
-    public:
-    // constructors
-    Dataset(const std::string& filepath, size_t labelNums=1);
-    Dataset(const Matrix& x,const Matrix& y);
-
-    //get dimensions
+struct Column {
+    std::string name;
+    bool isNumeric;
+    std::vector<double> numericValues;
+    std::vector<std::string> textValues;
+};
+struct trainTest {
+    Dataset trainSample;
+    Dataset testSample;
+};
+class Dataset {
+public:
+    //constructor
+    Dataset(const std::string& filepath, size_t labelNums);
+    //dimensions
     size_t getSampleNums() const;
     size_t getFeatureNums() const;
     size_t getLabelNums() const;
-
-    // show dataset 
+    //showing dataset
     void show(size_t start, size_t end) const;
     void show() const;
     void showFeatures() const;
-    void showLabels()const;
+    void showLabels() const;
     void showFeatureNames() const;
-    void showLabelNames()const;
+    void showLabelNames() const;
     void head() const;
     void head(size_t n) const;
     void tail() const;
     void tail(size_t n) const;
-
-    //get matrices or vectors
-    Matrix getX()const;
-    Matrix getY()const;
-    std::vector<std::string> getFeatureNames()const;
-    std::vector<std::string> getLabelNames()const;
-    
+    //get matrices
+    Matrix getX() const;
+    Matrix getY() const;
+    std::vector<std::string> getFeatureNames() const;
+    std::vector<std::string> getLabelNames() const;
     //dataset operations
-    trainTest trainTestSplit(size_t startTrain, size_t endTrain,size_t startTest, size_t endTest)const;
-    trainTest trainTestSplit(size_t splitPoint)const;
+    trainTest trainTestSplit(size_t startTrain, size_t endTrain, size_t startTest, size_t endTest) const;
+    trainTest trainTestSplit(size_t splitPoint) const;
     void shuffle();
     void normalize();
-    
+    void selectFeatures(const std::vector<std::string>& featureNames);
+    void selectFeatures(std::initializer_list<std::string> featureNames);
 
-    private:
-        bool isNumericString(const std::string& s) const;
-        Matrix featureMatrix, labelMatrix;
-        std ::vector<std::string> featureNames;
-        std ::vector<std::string> labelNames;
+private:
+    std::vector<Column> columns;
+    size_t labelCount;
+    std::vector<std::string> selectedFeatureNames;
+    bool isNumericString(const std::string& s) const;
+    const Column& findcol(const std::string& name) const;
+    Dataset(std::vector<Column> cols, size_t labelNums, std::vector<std::string> selectedFeatures);
+    void swapRows(size_t r1, size_t r2);
 };
 
-struct trainTest{
-    Dataset trainSample;
-    Dataset testSample;
-};

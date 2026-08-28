@@ -1,275 +1,234 @@
 #include "Dataset.hpp"
 
 //constructors
-
-Dataset::Dataset(const Matrix& x,const Matrix& y)
-    : featureMatrix(x), labelMatrix(y)
+Dataset::Dataset(const std::string& filepath,size_t labelNums)
+    :labelCount(labelNums)
+{
+    std:: ifstream file(filepath);
+    if(!file.is_open()){
+        throw std::runtime_error("could not open file: " + filepath);
+    }
+    std::vector<std::string> allNames;
+    std::string line;
+    std::getline(file,line);
+    std::stringstream headerstream(line);
+    std::string name;
+    while(std::getline(headerstream,name,',')) allNames.push_back(name);
+    std::vector<std::vector<std::string>> allRows;
+    while(std::getline(file,line)){
+        std::stringstream linestream(line);
+        std::string piece;
+        std::vector<std::string> row;
+        while(std::getline(linestream,piece,',')) row.push_back(piece);
+        allRows.push_back(row);
+    }
+    size_t allCols=allNames.size();
+    columns.resize(allCols);
+    for(size_t c=0;c<allCols;c++){
+        columns[c].name= allNames[c];
+        bool numeric=true;
+        for(const auto& row:allRows){
+            if(!isNumericString(row[c])){numeric=false;break;}
+        }
+        columns[c].isNumeric=numeric;
+        for(const auto& row:allRows){
+            if(numeric) columns[c].numericValues.push_back(std::stod(row[c]));
+            else columns[c].textValues.push_back(row[c]);
+        }
+    }
+    for(size_t c=0;c<allCols-labelNums;c++){
+        if(columns[c].isNumeric) selectedFeatureNames.push_back(columns[c].name);
+    }
+}
+Dataset::Dataset(std::vector<Column> cols, size_t labelNums, 
+                 std::vector<std::string> selectedFeatures)
+    : columns(std::move(cols)), 
+      labelCount(labelNums), 
+      selectedFeatureNames(std::move(selectedFeatures)) 
 {
 
 }
-bool Dataset::isNumericString(const std::string& s) const {
+bool Dataset::isNumericString(const std::string& s) const{
     if (s.empty()) return false;
     try {
         size_t pos;
         std::stod(s, &pos);
         return pos == s.size();
-    } 
-    catch (...) {
+    } catch (...) {
         return false;
     }
 }
-
-Dataset::Dataset(const std::string& filepath, size_t labelNums)
-    : featureMatrix(0,0), labelMatrix(0,0)
-{
-    std::ifstream file(filepath);
-    if (!file.is_open()) {
-        throw std::runtime_error("could not open file: " + filepath);
-    }
-    std::vector<std::string> allNames;
-    std::string line;
-    std::getline(file, line);
-    std::stringstream headerstream(line);
-    std::string name;
-    while (std::getline(headerstream, name, ',')) {
-        allNames.push_back(name);
-    }
-    size_t allCols = allNames.size();
-    size_t featureColsOriginal = allCols - labelNums;
-    std::vector<std::vector<std::string>> allRows;
-    while (std::getline(file, line)) {
-        std::stringstream linestream(line);
-        std::string piece;
-        std::vector<std::string> row;
-        while (std::getline(linestream, piece, ',')) {
-            row.push_back(piece);
+const Column& Dataset::findcol(const std::string& name) const {
+    for (const auto& col : columns) {
+        if (col.name == name) {
+            return col;
         }
-        allRows.push_back(row);
     }
-    size_t rowNums = allRows.size();
-    std::vector<bool> isNumericCol(featureColsOriginal, true);
-    for (size_t c = 0; c < featureColsOriginal; c++) {
-        for (size_t r = 0; r < rowNums; r++) {
-            if (!isNumericString(allRows[r][c])) {
-                isNumericCol[c] = false;
-                break;
+    throw std::runtime_error("Column not found: " + name);
+}
+
+//get matrices
+
+Matrix Dataset::getX() const {
+    if (columns.empty()) {
+        return Matrix(0, 0);
+    }
+    size_t rows = columns[0].isNumeric ? columns[0].numericValues.size() : columns[0].textValues.size();
+    Matrix result(rows, selectedFeatureNames.size());
+    for (size_t i = 0; i < selectedFeatureNames.size(); i++) {
+        const Column& col = findcol(selectedFeatureNames[i]);
+        if (!col.isNumeric) {
+            throw std::runtime_error("Feature column '" + col.name + "' is not numeric");
+        }
+        for (size_t j = 0; j < rows; j++) {
+            result(j, i) = col.numericValues[j]; 
+        }
+    }
+    return result;
+}
+
+Matrix Dataset::getY() const {
+    if (columns.empty()) return Matrix(0, 0);
+    size_t rows = columns[0].isNumeric ? columns[0].numericValues.size() : columns[0].textValues.size();
+    size_t featureCols = columns.size() - labelCount;
+    Matrix result(rows, labelCount);
+    for (size_t i = 0; i < labelCount; i++) {
+        const Column& col = columns[featureCols + i];
+        if (!col.isNumeric) {
+            throw std::runtime_error("Label column '" + col.name + "' is not numeric");
+        }
+        for (size_t j = 0; j < rows; j++) {
+            result(j, i) = col.numericValues[j];
+        }
+    }
+    return result;
+}
+void Dataset::selectFeatures(const std::vector<std::string>& featureNames) {
+    std::vector<std::string> newSelection;
+    newSelection.reserve(featureNames.size());
+
+    for (const auto& name : featureNames) {
+        for (const auto& already : newSelection) {
+            if (already == name) {
+                throw std::invalid_argument("Duplicate feature name in selection: " + name);
             }
         }
-    }
-    std::vector<std::vector<std::string>> categories(featureColsOriginal);
-    for (size_t c = 0; c < featureColsOriginal; c++) {
-        if (isNumericCol[c]) continue;
-        for (size_t r = 0; r < rowNums; r++) {
-            const std::string& val = allRows[r][c];
-            bool seen = false;
-            for (const auto& existing : categories[c]) {
-                if (existing == val) { seen = true; break; }
-            }
-            if (!seen) categories[c].push_back(val);
+        const Column& col = findcol(name);
+        size_t colIndex = 0;
+        for (; colIndex < columns.size(); ++colIndex) {
+            if (columns[colIndex].name == name) break;
         }
-    }
-    std::vector<size_t> startIndex(featureColsOriginal);
-    size_t expandedFeatureCount = 0;
-    for (size_t c = 0; c < featureColsOriginal; c++) {
-        startIndex[c] = expandedFeatureCount;
-        if (isNumericCol[c]) {
-            featureNames.push_back(allNames[c]);
-            expandedFeatureCount++;
-        } else {
-            for (const auto& category : categories[c]) {
-                featureNames.push_back(allNames[c] + "_" + category);
-            }
-            expandedFeatureCount += categories[c].size();
+        if (colIndex >= columns.size() - labelCount) {
+            throw std::invalid_argument("'" + name + "' is a label column and cannot be selected as a feature");
         }
-    }
-    for (size_t c = featureColsOriginal; c < allCols; c++) {
-        labelNames.push_back(allNames[c]);
-    }
-    featureMatrix = Matrix(rowNums, expandedFeatureCount);
-    labelMatrix = Matrix(rowNums, labelNums);
-    for (size_t r = 0; r < rowNums; r++) {
-        for (size_t c = 0; c < featureColsOriginal; c++) {
-            if (isNumericCol[c]) {
-                featureMatrix(r, startIndex[c]) = std::stod(allRows[r][c]);
-            } else {
-                const std::string& val = allRows[r][c];
-                for (size_t k = 0; k < categories[c].size(); k++) {
-                    if (categories[c][k] == val) {
-                        featureMatrix(r, startIndex[c] + k) = 1.0;
-                        break;
-                    }
-                }
-            }
+        if (!col.isNumeric) {
+            throw std::invalid_argument("Feature '" + name + "' is not numeric");
         }
-        for (size_t c = featureColsOriginal; c < allCols; c++) {
-            labelMatrix(r, c - featureColsOriginal) = std::stod(allRows[r][c]);
-        }
-    }
-}
-//get dimensions
 
-size_t Dataset::getSampleNums()const{
-    return featureMatrix.getRows();
-}
-size_t Dataset::getFeatureNums()const{
-    return featureMatrix.getCols();
-}
-size_t Dataset::getLabelNums()const{
-    return labelMatrix.getCols();
-}
-
-//showing dataset
-
-void Dataset::show(size_t start, size_t end)const{
-    size_t sampleNums=featureMatrix.getRows();
-    if(start>sampleNums||start>end||end>sampleNums||start==end){
-        throw std::invalid_argument("invalid starting or ending position");
+        newSelection.push_back(name);
     }
-    size_t featureNums=featureMatrix.getCols();
-    size_t labelNums= labelMatrix.getCols();
-    for (size_t j = 0; j < featureNums; j++) {
-        std::cout << std::setw(18) << featureNames[j];
-    }
-    std::cout << ' ';
-    for (size_t j = 0; j < labelNums; j++) {
-        std::cout << std::setw(18) << labelNames[j]; 
-    }
-    std::cout << "\n";
-    for(size_t i=start;i<end;i++){
-        for(size_t j=0;j<featureNums;j++){
-            std::cout << std::setw(18) << featureMatrix(i,j);
-        }
-        std ::cout<< ' ';
-        for(size_t j=0;j<labelNums;j++){
-            std::cout << std::setw(18) << labelMatrix(i,j);
-        }
-        std::cout<< "\n";
-    }
+    selectedFeatureNames = std::move(newSelection);
 }
-
-void Dataset::show()const{
-    size_t sampleNums=featureMatrix.getRows();  
-    (*this).show(0,sampleNums);
+void Dataset::selectFeatures(std::initializer_list<std::string> featureNames) {
+    selectFeatures(std::vector<std::string>(featureNames));
 }
-
-void Dataset:: showFeatures()const{
-    size_t featureNums=featureMatrix.getCols();
-    for (size_t j = 0; j < featureNums; j++) {
-        std::cout << featureNames[j] << ' ';
-    }
-    std::cout<< '\n';
-    featureMatrix.show();
+size_t Dataset::getSampleNums() const {
+    if (columns.empty()) return 0;
+    return columns[0].isNumeric 
+           ? columns[0].numericValues.size() 
+           : columns[0].textValues.size();
 }
-void Dataset::showLabels()const{
-    size_t labelNums= labelMatrix.getCols();
-    for (size_t j = 0; j < labelNums; j++) {
-        std::cout << labelNames[j] << ' ';
+static Column sliceColumn(const Column& col, size_t start, size_t end) {
+    Column result;
+    result.name = col.name;
+    result.isNumeric = col.isNumeric;
+    if (col.isNumeric) {
+        result.numericValues.assign(
+            col.numericValues.begin() + start,
+            col.numericValues.begin() + end
+        );
+    } else {
+        result.textValues.assign(
+            col.textValues.begin() + start,
+            col.textValues.begin() + end
+        );
     }
-    std::cout<< '\n';
-    labelMatrix.show();
+    return result;
 }
-void Dataset::showFeatureNames()const{
-    size_t featureNums=featureMatrix.getCols();
-    for (size_t j = 0; j < featureNums; j++) {
-        std::cout << featureNames[j] << ' ';
+trainTest Dataset::trainTestSplit(size_t startTrain, size_t endTrain, size_t startTest, size_t endTest) const {
+    size_t rows = getSampleNums();
+    if (endTrain > rows || endTest > rows)
+        throw std::range_error("split indices out of bounds");
+    if (startTrain >= endTrain || startTest >= endTest)
+        throw std::invalid_argument("empty train or test set");
+    if (startTrain < endTest && startTest < endTrain)
+        throw std::range_error("train and test sets overlap");
+    std::vector<Column> trainCols;
+    std::vector<Column> testCols;
+    trainCols.reserve(columns.size());
+    testCols.reserve(columns.size());
+    for (const auto& col : columns) {
+        trainCols.push_back(sliceColumn(col, startTrain, endTrain));
+        testCols.push_back(sliceColumn(col, startTest, endTest));
     }
-}
-void Dataset::showLabelNames()const{
-    size_t labelNums= labelMatrix.getCols();
-    for (size_t j = 0; j < labelNums; j++) {
-        std::cout << labelNames[j] << ' ';
-    }
-}
-void Dataset::head()const{
-    size_t sampleNums=featureMatrix.getRows();  
-    if(sampleNums<5){
-        (*this).show(0,sampleNums);
-        return;
-    }
-    (*this).show(0,5);
-}
-void Dataset::head(size_t n)const{
-    size_t sampleNums=featureMatrix.getRows();  
-    if(sampleNums<n){
-        (*this).show(0,sampleNums);
-        return;
-    }
-    (*this).show(0,n);
+    return trainTest{
+        Dataset(std::move(trainCols), labelCount, selectedFeatureNames),
+        Dataset(std::move(testCols), labelCount, selectedFeatureNames)
+    };
 }
 
-void Dataset::tail()const{
-    size_t sampleNums=featureMatrix.getRows();  
-    if(sampleNums<5){
-        (*this).show(0,sampleNums);
-        return;
-    }
-    (*this).show(sampleNums-5,sampleNums);
-}
-void Dataset::tail(size_t n)const{
-    size_t sampleNums=featureMatrix.getRows();  
-    if(sampleNums<n){
-        (*this).show(0,sampleNums);
-        return;
-    }
-    (*this).show(sampleNums-n,sampleNums);
-}
-
-
-
-//get matrices or vectors
-
-Matrix Dataset::getX()const{
-    return featureMatrix;
-}
-Matrix Dataset::getY()const{
-    return labelMatrix;
-}
-std::vector<std::string> Dataset:: getFeatureNames()const{
-    return featureNames;
-}
-std::vector<std::string> Dataset:: getLabelNames()const{
-    return labelNames;
-}
-
-// data set operations
-trainTest Dataset:: trainTestSplit(size_t startTrain, size_t endTrain,size_t startTest, size_t endTest)const{
-    if (startTrain < endTest && startTest < endTrain) {
-        throw std::range_error("train sample and test sample overlap");
-    }
-    Matrix trainX = featureMatrix.rowSlice(startTrain,endTrain);
-    Matrix trainY = labelMatrix.rowSlice(startTrain,endTrain);
-    Matrix testX = featureMatrix.rowSlice(startTest,endTest);
-    Matrix testY = labelMatrix.rowSlice(startTest,endTest);
-    Dataset trainset(trainX,trainY);
-    Dataset testset(testX,testY);
-    return trainTest{trainset,testset};
-}
-trainTest Dataset:: trainTestSplit(size_t splitPoint)const{
-    size_t rows= this->getSampleNums();
+trainTest Dataset::trainTestSplit(size_t splitPoint) const {
+    size_t rows = getSampleNums();
     if (splitPoint == 0 || splitPoint >= rows)
         throw std::invalid_argument("splitPoint must be between 1 and rows-1");
-    return this->trainTestSplit(0, splitPoint,splitPoint,rows);
+    return trainTestSplit(0, splitPoint, splitPoint, rows);
 }
-void Dataset::shuffle(){
-    size_t rows = this->getSampleNums();
-    if (rows <= 1) return;
-    std::random_device rd;
-    std::mt19937 engine(rd());
-    for (size_t i = 0; i < rows - 1; i++) {
-        std::uniform_int_distribution<size_t> dist(i, rows - 1);
-        size_t randomNumber = dist(engine);
-        featureMatrix.swapRows(i, randomNumber);
-        labelMatrix.swapRows(i, randomNumber);
+
+
+void Dataset::normalize() {
+    size_t featureCount = columns.size() - labelCount;
+        for (size_t c = 0; c < featureCount; ++c) {
+        if (!columns[c].isNumeric) continue;
+        auto& vals = columns[c].numericValues;
+        if (vals.empty()) continue;
+        double sum = 0.0;
+        for (double v : vals) sum += v;
+        double mean = sum / vals.size();
+        double sqSum = 0.0;
+        for (double v : vals) {
+            double diff = v - mean;
+            sqSum += diff * diff;
+        }
+        double std = std::sqrt(sqSum / vals.size());
+        if (std < 1e-8) {
+            for (double& v : vals) v = 0.0;
+        } else {
+            for (double& v : vals) {
+                v = (v - mean) / std;
+            }
+        }
     }
 }
-void Dataset::normalize(){
-    Matrix means=featureMatrix.mean(0);
-    Matrix stds=featureMatrix.std(0);
-    for(size_t i=0;i<featureMatrix.getRows();i++){
-        for(size_t j=0;j<featureMatrix.getCols();j++){
-            if(stds(0,j) > epsilon){
-                featureMatrix(i,j) = (featureMatrix(i,j) - means(0,j)) / stds(0,j);
-            }
+void Dataset::swapRows(size_t r1, size_t r2) {
+    for (auto& col : columns) {
+        if (col.isNumeric) {
+            std::swap(col.numericValues[r1], col.numericValues[r2]);
+        } else {
+            std::swap(col.textValues[r1], col.textValues[r2]);
+        }
+    }
+}
+
+void Dataset::shuffle() {
+    size_t rows = getSampleNums();
+    if (rows <= 1) return; 
+    std::random_device rd;
+    std::mt19937 engine(rd());
+    for (size_t i = 0; i < rows - 1; ++i) {
+        std::uniform_int_distribution<size_t> dist(i, rows - 1);
+        size_t j = dist(engine);
+        if (i != j) {
+            swapRows(i, j);
         }
     }
 }
