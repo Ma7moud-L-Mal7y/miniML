@@ -20,6 +20,7 @@ class Matrix{
 public:
     // constructor and destructor
     Matrix(size_t r, size_t c);
+    Matrix(size_t r, size_t c, double k);
     Matrix(const Matrix& m);
     Matrix(size_t r, size_t c, std::initializer_list<double> list);
     ~Matrix();

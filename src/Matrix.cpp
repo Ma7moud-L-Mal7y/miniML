@@ -4,8 +4,14 @@
 Matrix::Matrix(size_t r, size_t c)
     : rows(r), cols(c), data(new double[r*c])
 {
+
+}
+
+Matrix::Matrix(size_t r, size_t c, double k)
+    : rows(r), cols(c), data(new double[r*c])
+{
     for(size_t i = 0; i < r*c; ++i){
-        data[i] = 0.0;
+        data[i] = k;
     }
 };
 
@@ -41,7 +47,9 @@ Matrix::~Matrix(){
 Matrix Matrix::Identity(size_t n){
     Matrix result(n, n);
     for(size_t i = 0; i < n; i++){
-        result.data[i + i*n] = 1;
+        for(size_t j = 0; j < n; j++){
+            result(i, j) = (i == j);
+        }
     }
     return result;
 }
@@ -79,7 +87,7 @@ Matrix Matrix::operator*(const Matrix&m2) const{
     }
 
     // C_i,j = sum{ A_i,k * B_k,j }
-    Matrix result(rows, m2.cols);
+    Matrix result(rows, m2.cols, 0);
     for(size_t i = 0; i < rows; i++){
         for(size_t k = 0; k < cols; k++){
             double a = (*this)(i, k);
