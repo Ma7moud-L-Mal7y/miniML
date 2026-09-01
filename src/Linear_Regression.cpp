@@ -11,7 +11,7 @@ LinearRegression::LinearRegression()
 
 LinearRegression::LinearRegression(Matrix X, Matrix y)
     : beta(std::nullopt),
-    X(X), 
+    X(addOnesCol(X)), 
     y(y)
 {
 
@@ -30,9 +30,9 @@ Matrix LinearRegression::fit(){
 }
 
 Matrix LinearRegression::fit(const Matrix& X, const Matrix& y){
-    this->X = X;
+    this->X = addOnesCol(X);
     this->y = y;
-    beta = (X.transpose() * X).solve(X.transpose() * y);
+    beta = (this->X.value().transpose() * this->X.value()).solve(this->X.value().transpose() * y);
 
     return beta.value();
 }
@@ -42,7 +42,7 @@ Matrix LinearRegression::predict(const Matrix& X) const{
     if(!beta.has_value())
         throw std::runtime_error("beta is not populated yet");
 
-    return X * beta.value();
+    return addOnesCol(X) * beta.value();
 }
 
 // showing
