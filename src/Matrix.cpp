@@ -24,6 +24,14 @@ Matrix::Matrix(const Matrix& m2)
     }
 }
 
+Matrix::Matrix(Matrix&& m) noexcept
+    : rows(m.rows), cols(m.cols), data(m.data)
+{
+    m.rows = 0;
+    m.cols = 0;
+    m.data = nullptr;
+}
+
 Matrix::Matrix(size_t r, size_t c, std::initializer_list<double> list)
     : rows(r), cols(c), data(new double[r*c])
 {   
@@ -140,6 +148,34 @@ Matrix& Matrix::operator=(const Matrix& m2){
     return *this;
 }
 
+Matrix& Matrix::operator=(std::initializer_list<double> list){
+    size_t n = list.size();
+    if(n > rows * cols)
+        throw std::invalid_argument("Matrix can't hold init list");
+
+    size_t i = 0;
+    for(const auto& element : list){
+        data[i++] = element;
+    }
+    for(; i < rows * cols; i++){
+        data[i] = 0;
+    }
+
+    return *this;
+}
+
+Matrix& Matrix::operator=(Matrix&& m2) noexcept{
+    if(this == &m2) return *this;
+    delete[] data;
+    data = m2.data;
+    rows = m2.rows;
+    cols = m2.cols;
+    m2.data = nullptr;
+    m2.rows = 0;
+    m2.cols = 0;
+    return *this;
+}
+
 double Matrix::operator()(size_t r, size_t c) const{
     if(r >= rows || c >= cols){
         throw std::range_error("index out of range");
@@ -200,13 +236,21 @@ luDecomposition Matrix::luDecompose() const{
 
 
         for(size_t row = col + 1; row < rows; row++){
+            if(std::abs(U(col, col)) < epsilon){
+                L(row, col) = 0;
+                continue;
+            }
+
             double m = U(row, col) / U(col, col);
             L(row, col) = m;
             U.addScaledRow(row, col, -m);
         }
     }
 
-    return luDecomposition{L, U, P, swaps};
+    return luDecomposition{std::move(L),
+                            std::move(U),
+                            std::move(P),
+                            swaps};
 }
 
 Matrix Matrix::transpose() const{
@@ -245,7 +289,7 @@ Matrix Matrix::solve(const Matrix& b) const{
     return solve(b, lu);
 }
 
-Matrix Matrix::solve(const Matrix& b, luDecomposition lu) const{
+Matrix Matrix::solve(const Matrix& b, const luDecomposition& lu) const{
     if(!isSquare())
         throw std::range_error("Matrix is not square");
 
@@ -293,7 +337,7 @@ Matrix Matrix::inverse() const{
     luDecomposition lu = luDecompose();
     Matrix result(rows, cols);
     for(size_t j = 0; j < cols; j++){
-        Matrix e(rows, 1);
+        Matrix e(rows, 1, 0);
         e(j, 0) = 1;
         Matrix col = solve(e, lu);
         for(size_t i = 0; i < rows; i++){
@@ -490,20 +534,25 @@ Matrix Matrix::sum(int axis) const{
 Matrix Matrix::mean(int axis) const{
     return sum(axis) * (1.0/((axis) ? cols : rows));
 }
+
 double Matrix::std()const{
-    double mean=this->mean();
-    double variance=0;
-    for(size_t i=0;i<rows*cols;i++){
-        double diff = data[i] - mean;
+    double mu = mean();
+
+    double variance = 0;
+    for(size_t i = 0; i < rows * cols; i++){
+        double diff = data[i] - mu;
         variance += diff * diff;
     }
-    variance/=(rows*cols);
+    variance /= (rows*cols);
+
     return std::sqrt(variance);
 }
+
 Matrix Matrix::std(int axis)const{
     if(axis==0){
         Matrix result(1,cols);
-        Matrix means=this->mean(0);
+        Matrix means = mean(0);
+
         for(size_t i=0;i<cols;i++){
             double colVar=0;
             for(size_t j=0;j<rows;j++){
@@ -513,11 +562,13 @@ Matrix Matrix::std(int axis)const{
             colVar/=rows;
             result(0,i)=std::sqrt(colVar);
         }
+
         return result;
     }
     else if(axis==1){
         Matrix result(rows,1);
-        Matrix means=this->mean(1);
+        Matrix means = mean(1);
+
         for(size_t i=0;i<rows;i++){
             double rowVar=0;
             for(size_t j=0;j<cols;j++){

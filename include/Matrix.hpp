@@ -11,7 +11,7 @@
 #include <iomanip>
 
 
-constexpr double epsilon = 0.0000001;
+constexpr double epsilon = 10e-12;
 
 // helper structs
 struct luDecomposition;
@@ -22,6 +22,7 @@ public:
     Matrix(size_t r, size_t c);
     Matrix(size_t r, size_t c, double k);
     Matrix(const Matrix& m);
+    Matrix(Matrix&& m) noexcept;
     Matrix(size_t r, size_t c, std::initializer_list<double> list);
     ~Matrix();
 
@@ -35,6 +36,8 @@ public:
     Matrix& operator+=(const Matrix& m2);
     Matrix& operator-=(const Matrix& m2);
     Matrix& operator=(const Matrix& m2);
+    Matrix& operator=(std::initializer_list<double> list);
+    Matrix& operator=(Matrix&& m2) noexcept;
     double operator()(size_t r, size_t c) const;
     double& operator()(size_t r, size_t c);
     bool operator==(const Matrix& m2) const;
@@ -44,7 +47,7 @@ public:
     double determinant() const;
     size_t rank() const;
     Matrix solve(const Matrix& b) const;
-    Matrix solve(const Matrix& b, luDecomposition lu) const;
+    Matrix solve(const Matrix& b, const luDecomposition& lu) const;
     Matrix inverse() const;
 
     Matrix rowSlice(size_t r1, size_t r2) const;
