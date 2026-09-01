@@ -28,7 +28,7 @@ Matrix LogisticRegression::fit(const Matrix& X, const Matrix& Y) {
     this->y = Y;
     size_t colNums = x.value().getCols();
     size_t sampleNums = x.value().getRows();
-    beta = Matrix(colNums, 1);
+    beta = Matrix(colNums, 1,0.0);
     
     const double tolerance = 1e-6;
     
