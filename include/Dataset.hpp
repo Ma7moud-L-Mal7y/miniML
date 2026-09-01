@@ -49,6 +49,8 @@ public:
     void selectFeatures(const std::vector<std::string>& featureNames);
     void selectFeatures(std::initializer_list<std::string> featureNames);
     void resetFeatures();
+    void selectLabel(const std::string& labelName);
+    void resetLabels();
 
 private:
     std::vector<Column> columns;
@@ -61,6 +63,7 @@ private:
     std::vector<double> normMeans;
     std::vector<double> normStds;
     bool hasNormStats = false;
+    std::string selectedLabelName;
 };
 
 struct trainTest {

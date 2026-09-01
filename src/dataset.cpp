@@ -104,6 +104,14 @@ Matrix Dataset::getY() const {
     if (columns.empty()) return Matrix(0, 0);
     size_t rows = columns[0].isNumeric ? columns[0].numericValues.size() : columns[0].textValues.size();
     size_t featureCols = columns.size() - labelCount;
+    if(!selectedLabelName.empty()){
+        Matrix result(rows,1);
+        const Column& col=findCol(selectedLabelName);
+        for(size_t i=0;i<rows;i++){
+            result(i,0)=col.numericValues[i];
+            return result;
+        }
+    }
     Matrix result(rows, labelCount);
     for (size_t i = 0; i < labelCount; i++) {
         const Column& col = columns[featureCols + i];
@@ -262,6 +270,23 @@ void Dataset::resetFeatures() {
     hasNormStats = false;
     normMeans.clear();
     normStds.clear();
+}
+void Dataset::selectLabel(const std::string& labelName){
+    size_t featureCols=columns.size()-labelCount;
+    bool isLabel=false;
+    for(size_t c=featureCols;c<columns.size();c++){
+        if(labelName==columns[c].name){
+            isLabel=true;
+            break;
+        }
+    }
+    if(!isLabel){
+        throw std::invalid_argument("please select a valid label");
+    }
+    selectedLabelName=labelName;
+}
+void Dataset::resetLabels(){
+    selectedLabelName.clear();
 }
 trainTest Dataset::trainTestSplit(size_t startTrain, size_t endTrain, size_t startTest, size_t endTest) const {
     size_t rows = getSampleNums();
