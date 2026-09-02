@@ -7,12 +7,16 @@
 #include <iomanip>
 #include <random>
 #include "Matrix.hpp"
+#include <map>
 
 struct Column {
     std::string name;
     bool isNumeric;
     std::vector<double> numericValues;
     std::vector<std::string> textValues;
+    mutable bool hasEncoding = false;
+    mutable std::map<std::string, double> encodeMap;
+    mutable std::map<double, std::string> decodeMap;
 };
 struct trainTest;
 
@@ -35,6 +39,8 @@ public:
     //get matrices
     Matrix getX() const;
     Matrix getY() const;
+    Matrix getXEncoded() const;
+    Matrix getYEncoded() const; 
     std::vector<std::string> getSelectedFeatureNames() const;
     std::vector<std::string> getAllFeatureNames()const;
     std::vector<std::string> getLabelNames() const;
@@ -51,6 +57,7 @@ public:
     void resetFeatures();
     void selectLabel(const std::string& labelName);
     void resetLabels();
+    std::string decodeLabel(double value,const std::string colName) const;  
 
 private:
     std::vector<Column> columns;
@@ -64,6 +71,7 @@ private:
     std::vector<double> normStds;
     bool hasNormStats = false;
     std::string selectedLabelName;
+    void encodeColumn(const Column& col) const;
 };
 
 struct trainTest {

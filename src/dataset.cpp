@@ -64,6 +64,9 @@ static Column sliceColumn(const Column& col, size_t start, size_t end) {
             col.textValues.begin() + end
         );
     }
+    result.hasEncoding=col.hasEncoding;
+    result.encodeMap=col.encodeMap;
+    result.decodeMap=col.decodeMap;
     return result;
 }
 //get dimensions
@@ -99,18 +102,47 @@ Matrix Dataset::getX() const {
     }
     return result;
 }
+Matrix Dataset::getXEncoded() const {
+    if (columns.empty()) {
+        return Matrix(0, 0);
+    }
+    size_t rows = columns[0].isNumeric ? columns[0].numericValues.size() : columns[0].textValues.size();
+    Matrix result(rows, selectedFeatureNames.size());
+    for (size_t i = 0; i < selectedFeatureNames.size(); i++) {
+        const Column& col = findCol(selectedFeatureNames[i]);
+        if (!col.isNumeric) {
+            encodeColumn(col);
+        }
+        if(col.isNumeric){
+            for (size_t j = 0; j < rows; j++) {
+                result(j, i) = col.numericValues[j]; 
+            }
+        }
+        else{
+            for(size_t j=0;j<rows;j++){
+                result(j,i)=col.encodeMap.at(col.textValues[j]);   
+            }
+
+        }
+    }
+    return result;
+}
+
 
 Matrix Dataset::getY() const {
     if (columns.empty()) return Matrix(0, 0);
     size_t rows = columns[0].isNumeric ? columns[0].numericValues.size() : columns[0].textValues.size();
     size_t featureCols = columns.size() - labelCount;
     if(!selectedLabelName.empty()){
-        Matrix result(rows,1);
         const Column& col=findCol(selectedLabelName);
+        if (!col.isNumeric) {
+            throw std::runtime_error("Label column '" + col.name + "' is not numeric");
+        }
+        Matrix result(rows,1);
         for(size_t i=0;i<rows;i++){
             result(i,0)=col.numericValues[i];
-            return result;
         }
+        return result;
     }
     Matrix result(rows, labelCount);
     for (size_t i = 0; i < labelCount; i++) {
@@ -120,6 +152,49 @@ Matrix Dataset::getY() const {
         }
         for (size_t j = 0; j < rows; j++) {
             result(j, i) = col.numericValues[j];
+        }
+    }
+    return result;
+}
+Matrix Dataset::getYEncoded() const {
+    if (columns.empty()) return Matrix(0, 0);
+    size_t rows = columns[0].isNumeric ? columns[0].numericValues.size() : columns[0].textValues.size();
+    size_t featureCols = columns.size() - labelCount;
+    if(!selectedLabelName.empty()){
+        const Column& col=findCol(selectedLabelName);
+        if (!col.isNumeric) {
+            encodeColumn(col);
+        }
+        Matrix result(rows,1);
+        if(col.isNumeric){
+            for(size_t j=0;j<rows;j++){
+                result(j,0)=col.numericValues[j];
+            }
+        }
+        else{
+            for(size_t j=0;j<rows;j++){
+                result(j,0)=col.encodeMap.at(col.textValues[j]);   
+            }
+
+        }
+        return result;
+    }
+    Matrix result(rows, labelCount);
+    for (size_t i = 0; i < labelCount; i++) {
+        const Column& col = columns[featureCols + i];
+        if (!col.isNumeric) {
+            encodeColumn(col);
+        }
+        if(col.isNumeric){
+            for(size_t j=0;j<rows;j++){
+                result(j,i)=col.numericValues[j];
+            }
+        }
+        else{
+            for(size_t j=0;j<rows;j++){
+                result(j,i)=col.encodeMap.at(col.textValues[j]);   
+            }
+
         }
     }
     return result;
@@ -375,6 +450,18 @@ void Dataset::shuffle() {
         }
     }
 }
+std::string Dataset::decodeLabel(double value,std::string colName)const{
+    const Column& col=findCol(colName);
+    if(col.isNumeric){
+        return std::to_string(value);
+    }
+    for(const auto& [stringValue,numValue]:col.encodeMap){
+        if(numValue==value){
+            return stringValue;
+        }
+    }
+    throw std::invalid_argument("value not found in encoded map");
+}
 //helper functions
 void Dataset::swapRows(size_t r1, size_t r2) {
     for (auto& col : columns) {
@@ -402,4 +489,17 @@ const Column& Dataset::findCol(const std::string& name) const {
         }
     }
     throw std::runtime_error("Column not found: " + name);
+}
+void Dataset::encodeColumn(const Column& col) const{
+    if(col.isNumeric||col.hasEncoding)return;
+    size_t numRows=col.textValues.size();
+    size_t uniqueValues=0;
+    for(size_t r=0;r<numRows;++r){
+        if(col.encodeMap.find(col.textValues[r])==col.encodeMap.end()){
+            col.encodeMap[col.textValues[r]]=uniqueValues;
+            col.decodeMap[uniqueValues]=col.textValues[r];
+            uniqueValues++;
+        }
+    }
+    col.hasEncoding=true;
 }
