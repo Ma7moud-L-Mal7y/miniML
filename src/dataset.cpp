@@ -450,17 +450,16 @@ void Dataset::shuffle() {
         }
     }
 }
-std::string Dataset::decodeLabel(double value,std::string colName)const{
-    const Column& col=findCol(colName);
-    if(col.isNumeric){
+std::string Dataset::decodeLabel(double value, std::string colName) const {
+    const Column& col = findCol(colName);
+    if (col.isNumeric) {
         return std::to_string(value);
     }
-    for(const auto& [stringValue,numValue]:col.encodeMap){
-        if(numValue==value){
-            return stringValue;
-        }
+    auto val = col.decodeMap.find(value);
+    if (val == col.decodeMap.end()) {
+        throw std::invalid_argument("value not found in encoded map");
     }
-    throw std::invalid_argument("value not found in encoded map");
+    return val->second;
 }
 //helper functions
 void Dataset::swapRows(size_t r1, size_t r2) {
