@@ -68,6 +68,7 @@ public:
     // redutions and aggregations
     double sum() const;
     Matrix sum(int axis) const;
+    Matrix& prefixSum(int axis);
     double mean() const;
     Matrix mean(int axis) const;
     double std()const;

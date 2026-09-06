@@ -7,7 +7,7 @@ class LinearRegression{
 public:
     // constructors
     LinearRegression();
-    LinearRegression(Matrix X, Matrix y);
+    LinearRegression(Matrix& X, Matrix& y);
 
     // training
     Matrix fit();

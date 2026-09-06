@@ -581,8 +581,30 @@ Matrix Matrix::std(int axis)const{
         return result;
     }
     else {
-    throw std::invalid_argument("axis must be 0 or 1");
+        throw std::invalid_argument("axis must be 0 or 1");
     }   
+}
+
+Matrix& Matrix::prefixSum(int axis){
+    if(axis == 1){
+        for(size_t i = 0; i < rows; i++){
+            for(size_t j = 1; j < cols; j++){
+                (*this)(i, j) += (*this)(i, j-1);
+            }
+        }
+    }
+    else if(axis == 0){
+        for(size_t j = 0; j < cols; j++){
+            for(size_t i = 1; i < rows; i++){
+                (*this)(i, j) += (*this)(i-1, j);
+            }
+        }
+    }
+    else{
+        throw std::invalid_argument("axis must be 0 or 1");
+    }
+
+    return *this;
 }
 
 // get dimensions

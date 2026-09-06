@@ -9,7 +9,7 @@ LinearRegression::LinearRegression()
 
 }
 
-LinearRegression::LinearRegression(Matrix X, Matrix y)
+LinearRegression::LinearRegression(Matrix& X, Matrix& y)
     : beta(std::nullopt),
     X(addOnesCol(X)), 
     y(y)
