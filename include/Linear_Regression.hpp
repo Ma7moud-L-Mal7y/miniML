@@ -2,6 +2,7 @@
 
 #include "Matrix.hpp"
 #include <optional>
+#include "metrics.hpp"
 
 class LinearRegression{
 public:
@@ -26,18 +27,6 @@ private:
     std::optional<Matrix> X;
     std::optional<Matrix> y;
 };
-
-// evaluate
-namespace metrics{
-    double computeSSE(const Matrix& y, const Matrix& y_hat);
-    double computeSST(const Matrix& y);
-    double computeMSE(const Matrix& y, const Matrix& y_hat);
-    double computeMAE(const Matrix& y, const Matrix& y_hat);
-    double computeRMSE(const Matrix& y, const Matrix& y_hat);
-    double computeR2(const Matrix& y, const Matrix& y_hat);
-    double computeAdjustedR2(const Matrix& y, const Matrix& y_hat, size_t features);
-    double computeMaxError(const Matrix& y, const Matrix& y_hat);
-}
 
 // helper functions
 Matrix addOnesCol(const Matrix& A);

@@ -260,3 +260,43 @@ double DecisionTree::predictSingle(const Matrix& X, size_t rowIndex, const Node*
         return predictSingle(X,rowIndex,node->right.get());
     }
 }
+
+//show
+size_t DecisionTree::countDepth(const Node* node) const{
+    if(node==nullptr) return 0;
+    if(node->isLeaf) return 0;
+    size_t leftDepth=countDepth(node->left.get());
+    size_t rightDepth=countDepth(node->right.get());
+    return 1+std::max(leftDepth,rightDepth);
+}
+size_t DecisionTree::getDepth()const{
+    this->countDepth(root.get());
+}
+size_t DecisionTree::countLeaves(const Node* node) const{
+    if(node->isLeaf)return 1;
+    if(node==nullptr) return 0;
+    return countLeaves(node->left.get())+countLeaves(node->right.get());
+}
+size_t DecisionTree::getLeafCount() const {
+    return countLeaves(root.get());
+}
+void DecisionTree::printNode(const Node* node, size_t depth) const {
+    std::string indent(depth * 5, ' ');
+    if (node->isLeaf) {
+        std::cout << indent << "leaf -> " << node->value << "\n";
+        return;
+    }
+    std::cout << indent << "[feature " << node->splitFeatureIndex 
+              << " <= " << node->splitThreshold << "]\n";
+    std::cout << indent << "  True:\n";
+    printNode(node->left.get(), depth + 1);
+    std::cout << indent << "  False:\n";
+    printNode(node->right.get(), depth + 1);
+}
+void DecisionTree::showTree() const {
+    if (!root) {
+        std::cout << "your tree is empty\n";
+        return;
+    }
+    printNode(root.get(), 0);
+}
