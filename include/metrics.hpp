@@ -26,21 +26,16 @@ namespace classification_metrics {
     double computeLogLoss(const Matrix& y, const Matrix& y_hat);
 }
 
-struct MulticlassConfusionMatrix {
-    std::vector<std::vector<size_t>> matrix;
-    size_t numClasses;
-};
-
 namespace multiclass_metrics {
-    MulticlassConfusionMatrix computeConfusionMatrix(const Matrix& y, const Matrix& y_hat, size_t numClasses);
-    double computeAccuracy(const Matrix& y, const Matrix& y_hat);
-    std::vector<double> computePrecisionPerClass(const MulticlassConfusionMatrix& cm);
-    std::vector<double> computeRecallPerClass(const MulticlassConfusionMatrix& cm);
-    std::vector<double> computeF1PerClass(const MulticlassConfusionMatrix& cm);
-    double computeMacroPrecision(const MulticlassConfusionMatrix& cm);
-    double computeMacroRecall(const MulticlassConfusionMatrix& cm);
-    double computeMacroF1(const MulticlassConfusionMatrix& cm);
-    double computeWeightedPrecision(const MulticlassConfusionMatrix& cm);
-    double computeWeightedRecall(const MulticlassConfusionMatrix& cm);
-    double computeWeightedF1(const MulticlassConfusionMatrix& cm);
+    Matrix computeConfusionMatrix(const Matrix& y, const Matrix& y_hat, size_t numClasses);
+    double computeAccuracy(const Matrix& cm);
+    std::vector<double> computePrecisionPerClass(const Matrix& cm);
+    std::vector<double> computeRecallPerClass(const Matrix& cm);
+    std::vector<double> computeF1PerClass(const Matrix& cm);
+    double computeMacroPrecision(const Matrix& cm);
+    double computeMacroRecall(const Matrix& cm);
+    double computeMacroF1(const Matrix& cm);
+    double computeWeightedPrecision(const Matrix& cm);
+    double computeWeightedRecall(const Matrix& cm);
+    double computeWeightedF1(const Matrix& cm);
 }
