@@ -130,12 +130,8 @@ double KMean::getInertia() const{
     return inertia_;
 }
 
-double KMean::getSilhouette() const{
-    return 0.0;
-}
-
-double KMean::getDaviesBouldin() const{
-    return 0.0;
+double KMean::getSilhouette(const Matrix& X) const{
+    return silhouetteScore(X, labels_, k_);
 }
 
 // check
@@ -166,4 +162,54 @@ Matrix euclidDist(const Matrix& X, const Matrix& C){
     }
 
     return result;
+}
+
+double silhouetteScore(const Matrix& X, const std::vector<size_t>& labels, size_t k){
+    size_t n = X.getRows();
+    size_t d = X.getCols();
+
+    Matrix dist = euclidDist(X, X);
+
+    // count members of each clusters
+    std::vector<size_t> clusterCount(k, 0);
+    for(size_t i : labels){
+        clusterCount[i]++;
+    }
+
+    double S = 0.0;
+    for(size_t i = 0; i < n; i++){
+        // guard against division by zero
+        if(clusterCount[labels[i]] == 1)
+            continue;
+
+
+        double intraSum = 0.0;
+        std::vector<double> interSum(k, 0.0);
+        for(size_t j = 0; j < n; j++){
+            if(i == j)
+                continue;
+
+            if(labels[i] == labels[j])
+                intraSum += dist(i,j);
+            else
+                interSum[labels[j]] += dist(i,j);
+        }
+
+        double a_i = intraSum / (clusterCount[labels[i]] - 1);
+
+        double b_i = std::numeric_limits<double>::infinity();
+        for(size_t c = 0; c < k; c++){
+            if(c == labels[i])
+                continue;
+
+            double avgToC = interSum[c] / clusterCount[c];
+            if(avgToC < b_i){
+                b_i = avgToC;
+            }
+        }
+
+        S += (b_i - a_i) / std::max(a_i, b_i);
+    }
+
+    return S / n;
 }

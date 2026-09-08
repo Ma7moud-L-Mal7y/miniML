@@ -18,8 +18,7 @@ public:
 
     // evaluate 
     double getInertia() const;
-    double getSilhouette() const;
-    double getDaviesBouldin() const;
+    double getSilhouette(const Matrix& X) const;
 
     // check
     bool isConverged() const;
@@ -37,3 +36,4 @@ private:
 
 // helper functions
 Matrix euclidDist(const Matrix& X, const Matrix& point);
+double silhouetteScore(const Matrix& X, const std::vector<size_t>& labels);
