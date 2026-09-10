@@ -2,6 +2,7 @@
 #include "Linear_Regression.hpp"
 #include "Dataset.hpp"
 #include "Matrix.hpp"
+#include "metrics.hpp"
 #include <cmath>
 #include <fstream>
 
@@ -45,8 +46,8 @@ TEST(LinearRegressionIntegrationTest, FitsAndPredictsOnFuelConsumptionCsv) {
         Matrix predictions = model.predict(testX);
         ASSERT_EQ(predictions.getRows(), testY.getRows());
 
-        double r2 = metrics::computeR2(testY, predictions);
-        double rmse = metrics::computeRMSE(testY, predictions);
+        double r2 = regression_metrics::computeR2(testY, predictions);
+        double rmse = regression_metrics::computeRMSE(testY, predictions);
 
         EXPECT_FALSE(std::isnan(r2));
         EXPECT_FALSE(std::isnan(rmse));
@@ -81,8 +82,8 @@ TEST(LinearRegressionIntegrationTest, FitsAndPredictsOnECommerceSalesCsv) {
         Matrix predictions = model.predict(testX);
         ASSERT_EQ(predictions.getRows(), testY.getRows());
 
-        double r2 = metrics::computeR2(testY, predictions);
-        double rmse = metrics::computeRMSE(testY, predictions);
+        double r2 = regression_metrics::computeR2(testY, predictions);
+        double rmse = regression_metrics::computeRMSE(testY, predictions);
 
         EXPECT_FALSE(std::isnan(r2));
         EXPECT_FALSE(std::isnan(rmse));

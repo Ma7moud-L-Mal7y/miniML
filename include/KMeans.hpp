@@ -36,4 +36,4 @@ private:
 
 // helper functions
 Matrix euclidDist(const Matrix& X, const Matrix& point);
-double silhouetteScore(const Matrix& X, const std::vector<size_t>& labels);
+double silhouetteScore(const Matrix& X, const std::vector<size_t>& labels, size_t k);
